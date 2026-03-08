@@ -13,6 +13,7 @@ import {
   XCircle,
   Loader2,
 } from "lucide-react";
+import Link from "next/link";
 
 // Sample product data with optimized image URLs (using smaller sizes)
 const products = [
@@ -263,109 +264,111 @@ const ProductCard = React.memo(
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
       >
-        {/* Image Container */}
-        <div className="relative aspect-square overflow-hidden bg-[#1a1a1a] font-inter">
-          <OptimizedImage
-            src={product.image}
-            alt={product.name}
-            className={`w-full h-full object-cover transition-transform duration-700 ${
-              isHovered ? "scale-110" : "scale-100"
-            }`}
-          />
+        <Link href={`/product/${product.id}`}>
+          {/* Image Container */}
+          <div className="relative aspect-square overflow-hidden bg-[#1a1a1a] font-inter">
+            <OptimizedImage
+              src={product.image}
+              alt={product.name}
+              className={`w-full h-full object-cover transition-transform duration-700 ${
+                isHovered ? "scale-110" : "scale-100"
+              }`}
+            />
 
-          {/* Badges */}
-          <div className="absolute top-3 left-3 flex flex-col gap-2 z-10">
-            {product.badge && (
-              <span
-                className={`px-3 py-1 text-xs font-normal rounded-full bg-gradient-to-r ${badgeColors} text-white shadow-lg shadow-black/20`}
-              >
-                {product.badge}
-              </span>
-            )}
-          </div>
-
-          {/* Action Buttons - Modern Floating Design */}
-          <div
-            className={`absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent flex items-center justify-center gap-3 transition-all duration-300 ${
-              isHovered ? "opacity-100" : "opacity-0 pointer-events-none"
-            }`}
-          >
-            <button
-              onClick={onQuickView}
-              className="w-12 h-12 bg-white/10 backdrop-blur-md rounded-full flex items-center justify-center hover:bg-purple-600 transition-all duration-300 transform hover:scale-110 hover:rotate-12 border border-white/20 group/btn"
-              title="Quick View"
-            >
-              <Eye className="w-5 h-5 text-white group-hover/btn:scale-110 transition-transform" />
-            </button>
-            <button
-              onClick={(e) => toggleFavorite(product.id, e)}
-              className="w-12 h-12 bg-white/10 backdrop-blur-md rounded-full flex items-center justify-center hover:bg-red-500/90 transition-all duration-300 transform hover:scale-110 hover:-rotate-12 border border-white/20 group/btn"
-              title={
-                favorites.includes(product.id)
-                  ? "Remove from Wishlist"
-                  : "Add to Wishlist"
-              }
-            >
-              <Heart
-                className={`w-5 h-5 transition-all ${
-                  favorites.includes(product.id)
-                    ? "fill-red-500 text-red-500 scale-110"
-                    : "text-white group-hover/btn:scale-110"
-                }`}
-              />
-            </button>
-          </div>
-
-          {/* Out of Stock Overlay */}
-          {!product.inStock && (
-            <div className="absolute inset-0 bg-[#1a1a1a]/95 backdrop-blur-sm flex items-center justify-center">
-              <div className="text-center transform -translate-y-2">
-                <XCircle className="w-12 h-12 text-red-500/80 mx-auto mb-2" />
-                <span className="text-white/90 font-normal font-inter text-sm px-4 py-2 bg-red-500/10 rounded-full border border-red-500/20">
-                  Out of Stock
-                </span>
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Product Info - Minimal Design */}
-        <div className="p-5 font-inter">
-          <p className="text-xs text-purple-400 mb-1 uppercase tracking-wider font-normal font-inter">
-            {product.category}
-          </p>
-
-          <h3 className="text-lg font-normal text-white mb-3 line-clamp-1 group-hover:text-purple-400 transition-colors">
-            {product.name}
-          </h3>
-
-          {/* Price Section */}
-          <div className="flex items-baseline justify-between mb-4">
-            <div className="flex items-baseline gap-2">
-              <span className="text-1xl font-normal text-white">
-                ${product.price}
-              </span>
-              {product.originalPrice > product.price && (
-                <span className="text-sm text-gray-500 line-through">
-                  ${product.originalPrice}
+            {/* Badges */}
+            <div className="absolute top-3 left-3 flex flex-col gap-2 z-10">
+              {product.badge && (
+                <span
+                  className={`px-3 py-1 text-xs font-normal rounded-full bg-gradient-to-r ${badgeColors} text-white shadow-lg shadow-black/20`}
+                >
+                  {product.badge}
                 </span>
               )}
             </div>
+
+            {/* Action Buttons - Modern Floating Design */}
+            <div
+              className={`absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent flex items-center justify-center gap-3 transition-all duration-300 ${
+                isHovered ? "opacity-100" : "opacity-0 pointer-events-none"
+              }`}
+            >
+              <button
+                onClick={onQuickView}
+                className="w-12 h-12 bg-white/10 backdrop-blur-md rounded-full flex items-center justify-center hover:bg-purple-600 transition-all duration-300 transform hover:scale-110 hover:rotate-12 border border-white/20 group/btn"
+                title="Quick View"
+              >
+                <Eye className="w-5 h-5 text-white group-hover/btn:scale-110 transition-transform" />
+              </button>
+              <button
+                onClick={(e) => toggleFavorite(product.id, e)}
+                className="w-12 h-12 bg-white/10 backdrop-blur-md rounded-full flex items-center justify-center hover:bg-red-500/90 transition-all duration-300 transform hover:scale-110 hover:-rotate-12 border border-white/20 group/btn"
+                title={
+                  favorites.includes(product.id)
+                    ? "Remove from Wishlist"
+                    : "Add to Wishlist"
+                }
+              >
+                <Heart
+                  className={`w-5 h-5 transition-all ${
+                    favorites.includes(product.id)
+                      ? "fill-red-500 text-red-500 scale-110"
+                      : "text-white group-hover/btn:scale-110"
+                  }`}
+                />
+              </button>
+            </div>
+
+            {/* Out of Stock Overlay */}
+            {!product.inStock && (
+              <div className="absolute inset-0 bg-[#1a1a1a]/95 backdrop-blur-sm flex items-center justify-center">
+                <div className="text-center transform -translate-y-2">
+                  <XCircle className="w-12 h-12 text-red-500/80 mx-auto mb-2" />
+                  <span className="text-white/90 font-normal font-inter text-sm px-4 py-2 bg-red-500/10 rounded-full border border-red-500/20">
+                    Out of Stock
+                  </span>
+                </div>
+              </div>
+            )}
           </div>
 
-          {/* Add to Cart Button - Modern Gradient */}
-          <button
-            disabled={!product.inStock}
-            className={`w-full py-2 rounded-md font-normal font-inter flex items-center justify-center gap-2 transition-all duration-300 ${
-              product.inStock
-                ? "bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 text-white shadow-lg shadow-amber-500/20 hover:shadow-amber-500/40 hover:shadow-xl transform hover:-translate-y-0.5 active:translate-y-0"
-                : "bg-[#1a1a1a] text-gray-500 cursor-not-allowed border border-gray-800"
-            }`}
-          >
-            <ShoppingCart className="w-4 h-4" />
-            <span>{product.inStock ? "Add to Cart" : "Out of Stock"}</span>
-          </button>
-        </div>
+          {/* Product Info - Minimal Design */}
+          <div className="p-5 font-inter">
+            <p className="text-xs text-purple-400 mb-1 uppercase tracking-wider font-normal font-inter">
+              {product.category}
+            </p>
+
+            <h3 className="text-lg font-normal text-white mb-3 line-clamp-1 group-hover:text-purple-400 transition-colors">
+              {product.name}
+            </h3>
+
+            {/* Price Section */}
+            <div className="flex items-baseline justify-between mb-4">
+              <div className="flex items-baseline gap-2">
+                <span className="text-1xl font-normal text-white">
+                  ${product.price}
+                </span>
+                {product.originalPrice > product.price && (
+                  <span className="text-sm text-gray-500 line-through">
+                    ${product.originalPrice}
+                  </span>
+                )}
+              </div>
+            </div>
+
+            {/* Add to Cart Button - Modern Gradient */}
+            <button
+              disabled={!product.inStock}
+              className={`w-full py-2 rounded-md font-normal font-inter flex items-center justify-center gap-2 transition-all duration-300 ${
+                product.inStock
+                  ? "bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 text-white shadow-lg shadow-amber-500/20 hover:shadow-amber-500/40 hover:shadow-xl transform hover:-translate-y-0.5 active:translate-y-0"
+                  : "bg-[#1a1a1a] text-gray-500 cursor-not-allowed border border-gray-800"
+              }`}
+            >
+              <ShoppingCart className="w-4 h-4" />
+              <span>{product.inStock ? "Add to Cart" : "Out of Stock"}</span>
+            </button>
+          </div>
+        </Link>
       </div>
     );
   },

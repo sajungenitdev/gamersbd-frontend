@@ -40,7 +40,7 @@ const TopBar = () => {
           <div className="flex items-center gap-1 sm:gap-2 pr-2 sm:pr-3 border-r border-gray-700 dark:border-gray-300">
             <User size={16} className="text-gray-400 dark:text-gray-500" />
             <Link
-              href="/signin"
+              href="/auth"
               className="hover:text-[#e87831] dark:hover:text-[#e87831] whitespace-nowrap"
             >
               Sign in
