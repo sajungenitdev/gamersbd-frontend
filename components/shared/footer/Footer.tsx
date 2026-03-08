@@ -19,7 +19,7 @@ const Footer = () => {
       { label: "New Products", href: "/new" },
       { label: "Top Sellers", href: "/top-sellers" },
       { label: "About Us", href: "/about" },
-      { label: "FAQs", href: "/faqs" },
+      { label: "FAQs", href: "/faq" },
       { label: "Order Tracking", href: "/track-order" },
     ],
     services: [
