@@ -99,6 +99,7 @@ const GamesAchivement = () => {
   const [imageErrors, setImageErrors] = useState<{ [key: number]: boolean }>(
     {},
   );
+  const [loadingTimeout, setLoadingTimeout] = useState<{ [key: number]: boolean }>({});
   const [itemsToShow, setItemsToShow] = useState(4);
 
   useEffect(() => {
@@ -114,6 +115,42 @@ const GamesAchivement = () => {
   }, []);
 
   const maxIndex = Math.max(0, gamesAchivement.length - itemsToShow);
+
+  // Reset currentIndex if it exceeds maxIndex
+  useEffect(() => {
+    if (currentIndex > maxIndex) {
+      setCurrentIndex(maxIndex);
+    }
+  }, [currentIndex, maxIndex]);
+
+  // Set timeout for each image to prevent infinite loading
+  useEffect(() => {
+    const timers: NodeJS.Timeout[] = [];
+    
+    gamesAchivement.forEach((product) => {
+      const timer = setTimeout(() => {
+        if (!imagesLoaded[product.id] && !imageErrors[product.id]) {
+          setLoadingTimeout((prev) => ({ ...prev, [product.id]: true }));
+          setImagesLoaded((prev) => ({ ...prev, [product.id]: true })); // Force mark as loaded
+          console.log(`Image ${product.id} loading timed out`);
+        }
+      }, 5000); // 5 second timeout
+      
+      timers.push(timer);
+    });
+
+    return () => timers.forEach(timer => clearTimeout(timer));
+  }, [imagesLoaded, imageErrors]);
+
+  // Preload images on component mount
+  useEffect(() => {
+    gamesAchivement.forEach((product) => {
+      const img = new Image();
+      img.src = product.image;
+      img.onload = () => handleImageLoad(product.id);
+      img.onerror = () => handleImageError(product.id);
+    });
+  }, []);
 
   const nextSlide = () => {
     setCurrentIndex((prev) => Math.min(prev + 1, maxIndex));
@@ -132,11 +169,13 @@ const GamesAchivement = () => {
 
   const handleImageLoad = (productId: number) => {
     setImagesLoaded((prev) => ({ ...prev, [productId]: true }));
+    console.log(`Image ${productId} loaded successfully`);
   };
 
   const handleImageError = (productId: number) => {
     setImageErrors((prev) => ({ ...prev, [productId]: true }));
     setImagesLoaded((prev) => ({ ...prev, [productId]: true })); // Mark as loaded to hide spinner
+    console.log(`Image ${productId} failed to load`);
   };
 
   const calculateDiscount = (price: number, originalPrice: number) => {
@@ -209,7 +248,7 @@ const GamesAchivement = () => {
                     {/* Product Image with Background Color */}
                     <div className="relative w-full aspect-square overflow-hidden rounded-2xl bg-gray-800 dark:bg-gray-200">
                       {/* Loading Spinner */}
-                      {!imagesLoaded[item.id] && !imageErrors[item.id] && (
+                      {!imagesLoaded[item.id] && !imageErrors[item.id] && !loadingTimeout[item.id] && (
                         <div className="absolute inset-0 flex items-center justify-center z-10 bg-gray-800 dark:bg-gray-200">
                           <div className="w-8 h-8 border-2 border-purple-500 border-t-transparent rounded-full animate-spin" />
                         </div>
@@ -221,6 +260,17 @@ const GamesAchivement = () => {
                           <div className="text-center">
                             <div className="text-gray-400 text-xs">
                               Failed to load
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Timeout Fallback */}
+                      {loadingTimeout[item.id] && !imagesLoaded[item.id] && !imageErrors[item.id] && (
+                        <div className="absolute inset-0 flex items-center justify-center z-10 bg-gray-800 dark:bg-gray-200">
+                          <div className="text-center">
+                            <div className="text-gray-400 text-xs">
+                              Taking too long
                             </div>
                           </div>
                         </div>
@@ -239,15 +289,15 @@ const GamesAchivement = () => {
                         loading="lazy"
                       />
 
-                      {/* Discount Badge - Show only if image loaded successfully */}
-                      {imagesLoaded[item.id] && !imageErrors[item.id] && (
+                      {/* Discount Badge - Show if image loaded or timed out */}
+                      {(imagesLoaded[item.id] || loadingTimeout[item.id]) && !imageErrors[item.id] && (
                         <div className="absolute top-3 left-3 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full z-20">
                           -{calculateDiscount(item.price, item.originalPrice)}%
                         </div>
                       )}
 
-                      {/* Rating Badge - Show only if image loaded successfully */}
-                      {imagesLoaded[item.id] && !imageErrors[item.id] && (
+                      {/* Rating Badge - Show if image loaded or timed out */}
+                      {(imagesLoaded[item.id] || loadingTimeout[item.id]) && !imageErrors[item.id] && (
                         <div className="absolute top-3 right-3 bg-black/70 backdrop-blur-sm text-white px-2 py-1 rounded-full text-xs font-bold flex items-center gap-1 z-20">
                           <StarIcon className="w-3 h-3 fill-yellow-500 text-yellow-500" />
                           <span>{item.editorRating}</span>

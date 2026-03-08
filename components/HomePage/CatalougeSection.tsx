@@ -4,7 +4,7 @@ import { ArrowRightIcon, SparklesIcon } from "lucide-react";
 
 const CatalougeSection = () => {
   return (
-    <section className="py-16 pt-5 bg-[#1a1a1a] dark:bg-white transition-colors duration-300">
+    <section className="pt-5 pb-28 bg-[#1a1a1a] dark:bg-white transition-colors duration-300">
       <div className="max-w-7xl mx-auto ">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
           {/* Left Side - Image */}
@@ -30,7 +30,7 @@ const CatalougeSection = () => {
             {/* Title */}
             <h2 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white dark:text-black leading-tight">
               Discover Your
-              <span className="block text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-400">
+              <span className="block text-transparent bg-clip-text bg-gradient-to-r from-[#d88616] to-pink-400">
                 Ultimate Gaming
               </span>
               Experience
@@ -45,7 +45,7 @@ const CatalougeSection = () => {
 
             {/* Buttons */}
             <div className="flex flex-wrap gap-4 pt-4">
-              <button className="group px-8 py-4 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl font-semibold flex items-center gap-2 hover:gap-3 transition-all hover:shadow-lg hover:shadow-purple-600/25">
+              <button className="group px-8 py-4 bg-gradient-to-r from-[#d88616] to-pink-600 text-white rounded-xl font-semibold flex items-center gap-2 hover:gap-3 transition-all hover:shadow-lg hover:shadow-[#d88616]/25">
                 Go to Catalog
                 <ArrowRightIcon className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
               </button>
@@ -63,7 +63,7 @@ const CatalougeSection = () => {
                   {[1, 2, 3].map((i) => (
                     <div
                       key={i}
-                      className="w-6 h-6 rounded-full bg-gradient-to-br from-purple-400 to-pink-400 border-2 border-[#1a1a1a] dark:border-white"
+                      className="w-6 h-6 rounded-full bg-gradient-to-br from-[#d88616] to-pink-400 border-2 border-[#1a1a1a] dark:border-white"
                     />
                   ))}
                 </div>

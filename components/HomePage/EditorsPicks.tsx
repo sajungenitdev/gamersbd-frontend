@@ -122,6 +122,7 @@ const EditorsPicks = () => {
   const [imageErrors, setImageErrors] = useState<{ [key: number]: boolean }>(
     {},
   );
+  const [loadingTimeout, setLoadingTimeout] = useState<{ [key: number]: boolean }>({});
   const [touchStart, setTouchStart] = useState(0);
   const [touchEnd, setTouchEnd] = useState(0);
   const [activeFilter, setActiveFilter] = useState("all");
@@ -174,6 +175,35 @@ const EditorsPicks = () => {
     }
   }, [currentIndex, maxIndex, filteredProducts.length]);
 
+  // Set timeout for each image to prevent infinite loading
+  useEffect(() => {
+    const timers: NodeJS.Timeout[] = [];
+    
+    filteredProducts.forEach((product) => {
+      const timer = setTimeout(() => {
+        if (!imagesLoaded[product.id] && !imageErrors[product.id]) {
+          setLoadingTimeout((prev) => ({ ...prev, [product.id]: true }));
+          setImagesLoaded((prev) => ({ ...prev, [product.id]: true })); // Force mark as loaded
+          console.log(`Image ${product.id} loading timed out`);
+        }
+      }, 5000); // 5 second timeout
+      
+      timers.push(timer);
+    });
+
+    return () => timers.forEach(timer => clearTimeout(timer));
+  }, [filteredProducts, imagesLoaded, imageErrors]);
+
+  // Preload images on component mount and when filter changes
+  useEffect(() => {
+    filteredProducts.forEach((product) => {
+      const img = new Image();
+      img.src = product.image;
+      img.onload = () => handleImageLoad(product.id);
+      img.onerror = () => handleImageError(product.id);
+    });
+  }, [filteredProducts]);
+
   const nextSlide = () => {
     setCurrentIndex((prev) => Math.min(prev + 1, maxIndex));
   };
@@ -191,11 +221,13 @@ const EditorsPicks = () => {
 
   const handleImageLoad = (productId: number) => {
     setImagesLoaded((prev) => ({ ...prev, [productId]: true }));
+    console.log(`Image ${productId} loaded successfully`);
   };
 
   const handleImageError = (productId: number) => {
     setImageErrors((prev) => ({ ...prev, [productId]: true }));
     setImagesLoaded((prev) => ({ ...prev, [productId]: true })); // Mark as loaded to hide spinner
+    console.log(`Image ${productId} failed to load`);
   };
 
   const calculateDiscount = (price: number, originalPrice: number) => {
@@ -327,7 +359,7 @@ const EditorsPicks = () => {
                     {/* Image Container */}
                     <div className="relative w-full aspect-square overflow-hidden bg-gray-800 dark:bg-gray-200">
                       {/* Loading Spinner */}
-                      {!imagesLoaded[product.id] && !imageErrors[product.id] && (
+                      {!imagesLoaded[product.id] && !imageErrors[product.id] && !loadingTimeout[product.id] && (
                         <div className="absolute inset-0 flex items-center justify-center z-10 bg-gray-800 dark:bg-gray-200">
                           <div className="w-8 h-8 border-2 border-purple-500 border-t-transparent rounded-full animate-spin" />
                         </div>
@@ -339,6 +371,17 @@ const EditorsPicks = () => {
                           <div className="text-center">
                             <div className="text-gray-400 text-xs">
                               Failed to load
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Timeout Fallback */}
+                      {loadingTimeout[product.id] && !imagesLoaded[product.id] && !imageErrors[product.id] && (
+                        <div className="absolute inset-0 flex items-center justify-center z-10 bg-gray-800 dark:bg-gray-200">
+                          <div className="text-center">
+                            <div className="text-gray-400 text-xs">
+                              Taking too long
                             </div>
                           </div>
                         </div>
@@ -357,8 +400,8 @@ const EditorsPicks = () => {
                         loading="lazy"
                       />
 
-                      {/* Discount Badge - Show only if image loaded successfully */}
-                      {imagesLoaded[product.id] && !imageErrors[product.id] && (
+                      {/* Discount Badge - Show if image loaded or timed out */}
+                      {(imagesLoaded[product.id] || loadingTimeout[product.id]) && !imageErrors[product.id] && (
                         <div className="absolute bottom-3 left-3 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full z-20">
                           -
                           {calculateDiscount(
@@ -369,10 +412,9 @@ const EditorsPicks = () => {
                         </div>
                       )}
 
-                      {/* Stock Badge - Show only if image loaded successfully */}
-                      {imagesLoaded[product.id] &&
-                        !imageErrors[product.id] &&
-                        product.inStock < 5 && (
+                      {/* Stock Badge - Show if image loaded or timed out */}
+                      {(imagesLoaded[product.id] || loadingTimeout[product.id]) && 
+                        !imageErrors[product.id] && product.inStock < 5 && (
                           <div className="absolute bottom-3 right-3 bg-red-500/90 text-white text-xs px-2 py-1 rounded-full z-20">
                             Only {product.inStock} left
                           </div>

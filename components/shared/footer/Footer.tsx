@@ -74,35 +74,35 @@ const Footer = () => {
 
               <div className="space-y-4">
                 <div className="flex items-start gap-3 text-gray-400 dark:text-gray-600">
-                  <MapPin className="w-5 h-5 mt-0.5 flex-shrink-0 text-purple-500" />
+                  <MapPin className="w-5 h-5 mt-0.5 flex-shrink-0 text-[#d88616]" />
                   <p className="text-sm">
                     11C, Haque Chamber, 89/2, Panthapath, Dhaka-1215
                   </p>
                 </div>
 
                 <div className="flex items-center gap-3 text-gray-400 dark:text-gray-600">
-                  <Mail className="w-5 h-5 flex-shrink-0 text-purple-500" />
+                  <Mail className="w-5 h-5 flex-shrink-0 text-[#d88616]" />
                   <a
                     href="mailto:gamersbd.world@gmail.com"
-                    className="text-sm hover:text-purple-500 transition-colors"
+                    className="text-sm hover:text-[#d88616] transition-colors"
                   >
                     gamersbd.world@gmail.com
                   </a>
                 </div>
 
                 <div className="flex items-center gap-3 text-gray-400 dark:text-gray-600">
-                  <Phone className="w-5 h-5 flex-shrink-0 text-purple-500" />
+                  <Phone className="w-5 h-5 flex-shrink-0 text-[#d88616]" />
                   <div className="flex flex-wrap gap-2 text-sm">
                     <a
                       href="tel:+880291100348"
-                      className="hover:text-purple-500 transition-colors"
+                      className="hover:text-[#d88616] transition-colors"
                     >
                       +88 02 91100348
                     </a>
                     {/* <span className="text-gray-600 dark:text-gray-400">|</span> */}
                     {/* <a
                       href="tel:+8801971424220"
-                      className="hover:text-purple-500 transition-colors"
+                      className="hover:text-[#d88616] transition-colors"
                     >
                       +88 01971424220
                     </a> */}
@@ -118,7 +118,7 @@ const Footer = () => {
                     href={social.href}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="w-10 h-10 bg-gray-800 dark:bg-gray-200 rounded-lg flex items-center justify-center hover:bg-purple-600 dark:hover:bg-purple-600 transition-colors group"
+                    className="w-10 h-10 bg-gray-800 dark:bg-gray-200 rounded-lg flex items-center justify-center hover:bg-[#d88616] dark:hover:bg-[#d88616] transition-colors group"
                     aria-label={social.label}
                   >
                     <social.icon className="w-4 h-4 text-gray-400 dark:text-gray-600 group-hover:text-white transition-colors" />
@@ -129,7 +129,7 @@ const Footer = () => {
 
             {/* Column 2: Information */}
             <div>
-              <h3 className="text-white dark:text-black text-lg font-semibold uppercase tracking-wider mb-4 pb-3 border-b border-gray-800 dark:border-gray-300 relative after:content-[''] after:absolute after:bottom-[-1px] after:left-0 after:w-12 after:h-0.5 after:bg-purple-600">
+              <h3 className="text-white dark:text-black text-lg font-semibold uppercase tracking-wider mb-4 pb-3 border-b border-gray-800 dark:border-gray-300 relative after:content-[''] after:absolute after:bottom-[-1px] after:left-0 after:w-12 after:h-0.5 after:bg-[#d88616]">
                 Information
               </h3>
               <ul className="space-y-3">
@@ -137,9 +137,9 @@ const Footer = () => {
                   <li key={link.label}>
                     <Link
                       href={link.href}
-                      className="text-sm text-gray-400 dark:text-gray-600 hover:text-purple-500 transition-colors inline-flex items-center gap-2 group"
+                      className="text-sm text-gray-400 dark:text-gray-600 hover:text-[#d88616] transition-colors inline-flex items-center gap-2 group"
                     >
-                      <ChevronRight className="w-3 h-3 text-purple-500 opacity-0 -ml-1 group-hover:opacity-100 group-hover:ml-0 transition-all" />
+                      <ChevronRight className="w-3 h-3 text-[#d88616] opacity-0 -ml-1 group-hover:opacity-100 group-hover:ml-0 transition-all" />
                       {link.label}
                     </Link>
                   </li>
@@ -149,7 +149,7 @@ const Footer = () => {
 
             {/* Column 3: Services */}
             <div>
-              <h3 className="text-white dark:text-black text-lg font-semibold uppercase tracking-wider mb-4 pb-3 border-b border-gray-800 dark:border-gray-300 relative after:content-[''] after:absolute after:bottom-[-1px] after:left-0 after:w-12 after:h-0.5 after:bg-purple-600">
+              <h3 className="text-white dark:text-black text-lg font-semibold uppercase tracking-wider mb-4 pb-3 border-b border-gray-800 dark:border-gray-300 relative after:content-[''] after:absolute after:bottom-[-1px] after:left-0 after:w-12 after:h-0.5 after:bg-[#d88616]">
                 Services
               </h3>
               <ul className="space-y-3">
@@ -157,9 +157,9 @@ const Footer = () => {
                   <li key={link.label}>
                     <Link
                       href={link.href}
-                      className="text-sm text-gray-400 dark:text-gray-600 hover:text-purple-500 transition-colors inline-flex items-center gap-2 group"
+                      className="text-sm text-gray-400 dark:text-gray-600 hover:text-[#d88616] transition-colors inline-flex items-center gap-2 group"
                     >
-                      <ChevronRight className="w-3 h-3 text-purple-500 opacity-0 -ml-1 group-hover:opacity-100 group-hover:ml-0 transition-all" />
+                      <ChevronRight className="w-3 h-3 text-[#d88616] opacity-0 -ml-1 group-hover:opacity-100 group-hover:ml-0 transition-all" />
                       {link.label}
                     </Link>
                   </li>
@@ -169,7 +169,7 @@ const Footer = () => {
 
             {/* Column 4: Newsletter */}
             <div className="space-y-4">
-              <h3 className="text-white dark:text-black text-lg font-semibold uppercase tracking-wider mb-4 pb-3 border-b border-gray-800 dark:border-gray-300 relative after:content-[''] after:absolute after:bottom-[-1px] after:left-0 after:w-12 after:h-0.5 after:bg-purple-600">
+              <h3 className="text-white dark:text-black text-lg font-semibold uppercase tracking-wider mb-4 pb-3 border-b border-gray-800 dark:border-gray-300 relative after:content-[''] after:absolute after:bottom-[-1px] after:left-0 after:w-12 after:h-0.5 after:bg-[#d88616]">
                 Newsletter
               </h3>
 
@@ -183,14 +183,14 @@ const Footer = () => {
                   <input
                     type="email"
                     placeholder="Your email address"
-                    className="w-full px-4 py-3 bg-gray-800 dark:bg-gray-200 text-white dark:text-black rounded-lg border border-gray-700 dark:border-gray-300 focus:border-purple-600 focus:outline-none focus:ring-1 focus:ring-purple-600 transition-colors text-sm placeholder:text-gray-500 dark:placeholder:text-gray-500"
+                    className="w-full px-4 py-3 bg-gray-800 dark:bg-gray-200 text-white dark:text-black rounded-lg border border-gray-700 dark:border-gray-300 focus:border-[#d88616] focus:outline-none focus:ring-1 focus:ring-[#d88616] transition-colors text-sm placeholder:text-gray-500 dark:placeholder:text-gray-500"
                     required
                   />
                 </div>
 
                 <button
                   type="submit"
-                  className="w-full px-4 py-3 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-medium rounded-lg transition-all transform hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2 text-sm group"
+                  className="w-full px-4 py-3 bg-gradient-to-r from-[#d88616] to-pink-600 hover:from-[#d88616] hover:to-pink-700 text-white font-medium rounded-lg transition-all transform hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2 text-sm group"
                 >
                   Subscribe
                   <Send className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
@@ -207,13 +207,13 @@ const Footer = () => {
 
       {/* Bottom Bar */}
       <div className="bg-[#1a1a1a] dark:bg-white border-t border-gray-800 dark:border-gray-200 transition-colors duration-300">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto ">
           <div className="py-6 flex flex-col md:flex-row justify-between items-center gap-4">
             <p className="text-sm text-gray-400 dark:text-gray-600 order-2 md:order-1">
               Copyright © {new Date().getFullYear()}{" "}
               <Link
                 href="/"
-                className="text-white dark:text-black font-medium hover:text-purple-500 transition-colors"
+                className="text-white dark:text-black font-medium hover:text-[#d88616] transition-colors"
               >
                 Gamers BD
               </Link>

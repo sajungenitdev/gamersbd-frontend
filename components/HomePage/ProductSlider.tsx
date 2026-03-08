@@ -76,6 +76,9 @@ const ProductSlider = () => {
   const [imageErrors, setImageErrors] = useState<{ [key: number]: boolean }>(
     {},
   );
+  const [loadingTimeout, setLoadingTimeout] = useState<{ [key: number]: boolean }>(
+    {},
+  );
   const sliderRef = useRef<HTMLDivElement>(null);
 
   const getItemsPerView = () => {
@@ -104,6 +107,20 @@ const ProductSlider = () => {
       setCurrentIndex(maxIndex);
     }
   }, [currentIndex, maxIndex]);
+
+  // Set timeout for each image to prevent infinite loading
+  useEffect(() => {
+    products.forEach((product) => {
+      const timer = setTimeout(() => {
+        if (!imagesLoaded[product.id] && !imageErrors[product.id]) {
+          setLoadingTimeout((prev) => ({ ...prev, [product.id]: true }));
+          setImagesLoaded((prev) => ({ ...prev, [product.id]: true })); // Force mark as loaded
+        }
+      }, 5000); // 5 second timeout
+
+      return () => clearTimeout(timer);
+    });
+  }, [imagesLoaded, imageErrors]);
 
   const nextSlide = () => {
     setCurrentIndex((prev) => Math.min(prev + 1, maxIndex));
@@ -135,20 +152,32 @@ const ProductSlider = () => {
 
   const handleImageLoad = (productId: number) => {
     setImagesLoaded((prev) => ({ ...prev, [productId]: true }));
+    console.log(`Image ${productId} loaded successfully`);
   };
 
   const handleImageError = (productId: number) => {
     setImageErrors((prev) => ({ ...prev, [productId]: true }));
     setImagesLoaded((prev) => ({ ...prev, [productId]: true })); // Mark as loaded to hide spinner
+    console.log(`Image ${productId} failed to load`);
   };
 
   const calculateDiscount = (price: number, originalPrice: number) => {
     return Math.round(((originalPrice - price) / originalPrice) * 100);
   };
 
+  // Preload images on component mount
+  useEffect(() => {
+    products.forEach((product) => {
+      const img = new Image();
+      img.src = product.image;
+      img.onload = () => handleImageLoad(product.id);
+      img.onerror = () => handleImageError(product.id);
+    });
+  }, []);
+
   return (
     <section className="py-12 bg-[#1a1a1a] dark:bg-white transition-colors duration-300">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-8 gap-4">
           <div>
@@ -213,8 +242,8 @@ const ProductSlider = () => {
                 <div className="relative group overflow-hidden rounded-2xl transition-all duration-300">
                   {/* Product Image with Loading State */}
                   <div className="relative w-full aspect-square overflow-hidden rounded-2xl bg-gray-800 dark:bg-gray-200">
-                    {/* Loading Spinner */}
-                    {!imagesLoaded[product.id] && !imageErrors[product.id] && (
+                    {/* Loading Spinner - Show only if not loaded and no error and no timeout */}
+                    {!imagesLoaded[product.id] && !imageErrors[product.id] && !loadingTimeout[product.id] && (
                       <div className="absolute inset-0 flex items-center justify-center z-10 bg-gray-800 dark:bg-gray-200">
                         <div className="w-8 h-8 border-2 border-purple-500 border-t-transparent rounded-full animate-spin" />
                       </div>
@@ -226,6 +255,17 @@ const ProductSlider = () => {
                         <div className="text-center">
                           <div className="text-gray-400 text-xs">
                             Failed to load
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Timeout Fallback */}
+                    {loadingTimeout[product.id] && !imagesLoaded[product.id] && !imageErrors[product.id] && (
+                      <div className="absolute inset-0 flex items-center justify-center z-10 bg-gray-800 dark:bg-gray-200">
+                        <div className="text-center">
+                          <div className="text-gray-400 text-xs">
+                            Taking too long
                           </div>
                         </div>
                       </div>
@@ -244,8 +284,8 @@ const ProductSlider = () => {
                       loading="lazy"
                     />
 
-                    {/* Discount Badge - Show only if image loaded successfully */}
-                    {imagesLoaded[product.id] &&
+                    {/* Discount Badge - Show always once image is considered "loaded" (either success, error, or timeout) */}
+                    {(imagesLoaded[product.id] || loadingTimeout[product.id]) &&
                       !imageErrors[product.id] &&
                       product.originalPrice && (
                         <div className="absolute top-3 left-3 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full z-20">
