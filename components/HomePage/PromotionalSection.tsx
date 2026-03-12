@@ -8,7 +8,7 @@ const PromotionalSectionMinimal = () => {
     <section className="py-12 bg-[#1a1a1a] dark:bg-white transition-colors duration-300">
       <div className="max-w-7xl mx-auto ">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Fortnite */}
+          {/* Fortnite Game Example */}
           <div className="">
             <div className="flex items-center gap-2 mb-2">
               <span className="text-3xl font-bold text-purple-600 dark:text-purple-400">

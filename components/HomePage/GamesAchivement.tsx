@@ -196,7 +196,7 @@ const GamesAchivement = () => {
             </p>
           </div>
 
-          {/* Navigation Buttons */}
+          {/* Navigation Buttons    */}
           <div className="flex gap-2">
             <button
               onClick={prevSlide}
