@@ -11,12 +11,12 @@ export const TestCartAPI = () => {
     const testAPI = async () => {
       try {
         // Test the test endpoint first
-        const testResponse = await axios.get("http://localhost:5000/api/cart/test");
+        const testResponse = await axios.get("https://gamersbd-server.onrender.com/api/cart/test");
         console.log("Cart test endpoint:", testResponse.data);
         
         // Try to get cart (will fail without auth, that's fine)
         try {
-          const cartResponse = await axios.get("http://localhost:5000/api/cart");
+          const cartResponse = await axios.get("https://gamersbd-server.onrender.com/api/cart");
           console.log("Cart response (no auth):", cartResponse.data);
         } catch (error: any) {
           console.log("Cart auth required (expected):", error.response?.status);

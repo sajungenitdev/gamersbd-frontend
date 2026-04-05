@@ -57,7 +57,7 @@ const SubcategoryPage = () => {
     const fetchData = async () => {
       try {
         setLoading(true);
-        const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+        const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://gamersbd-server.onrender.com";
         
         // Fetch subcategory details
         const subcategoryResponse = await axios.get(`${API_URL}/api/categories/${id}`);

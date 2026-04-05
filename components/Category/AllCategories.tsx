@@ -278,7 +278,7 @@ const AllCategories = () => {
   const fetchCategories = async () => {
     try {
       setLoading(true);
-      const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/categories`);
+      const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL || 'https://gamersbd-server.onrender.com'}/api/categories`);
       
       if (response.data.success) {
         const allCategories = response.data.data;

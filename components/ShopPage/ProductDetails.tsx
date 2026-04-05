@@ -833,7 +833,7 @@ const ProductDetails = () => {
       setError(null);
       // Use your existing API endpoint
       const response = await axios.get(
-        `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"}/api/products/${productId}`,
+        `${process.env.NEXT_PUBLIC_API_URL || "https://gamersbd-server.onrender.com"}/api/products/${productId}`,
       );
 
       if (response.data.success) {

@@ -17,7 +17,7 @@ export const DebugCart = () => {
       // Test cart endpoint
       try {
         console.log("🔍 Testing cart API...");
-        const response = await axios.get("http://localhost:5000/api/cart/test");
+        const response = await axios.get("https://gamersbd-server.onrender.com/api/cart/test");
         console.log("✅ Cart test endpoint:", response.data);
         setStatus("✅ Cart API is reachable");
       } catch (error: any) {

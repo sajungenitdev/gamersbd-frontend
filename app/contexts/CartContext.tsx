@@ -49,7 +49,7 @@ interface CartProviderProps {
 
 export const CartProvider = ({ 
   children, 
-  baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"
+  baseUrl = process.env.NEXT_PUBLIC_API_URL || "https://gamersbd-server.onrender.com"
 }: CartProviderProps) => {
   const [items, setItems] = useState<CartItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
