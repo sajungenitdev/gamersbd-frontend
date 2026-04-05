@@ -19,11 +19,17 @@ import { useCart } from "../../app/contexts/CartContext";
 import AddToCartButton from "../ui/AddToCartButton";
 
 // Types
+interface Category {
+  _id: string;
+  name: string;
+  slug: string;
+}
+
 interface Product {
   _id: string;
   id: string;
   name: string;
-  category: string | { _id: string; name: string };
+  category: string | { _id: string; name: string } | null;
   price: number;
   discountPrice?: number;
   originalPrice?: number;
@@ -37,12 +43,6 @@ interface Product {
   slug?: string;
   platform?: string[];
   description?: string;
-}
-
-interface Category {
-  _id: string;
-  name: string;
-  slug: string;
 }
 
 // Price ranges
@@ -126,10 +126,33 @@ const ProductCard = React.memo(
 
     const finalPrice = product.discountPrice || product.price;
     const originalPrice = product.originalPrice || product.price;
-    const categoryName =
-      typeof product.category === "object"
-        ? product.category.name
-        : product.category;
+    
+    // Safe category name extraction
+    const getCategoryName = (): string => {
+      if (!product.category) return "Uncategorized";
+      if (typeof product.category === "object") {
+        return product.category?.name || "Uncategorized";
+      }
+      return product.category || "Uncategorized";
+    };
+    
+    const categoryName = getCategoryName();
+
+    // Safe image URL extraction
+    const getImageUrl = (): string => {
+      if (product.image) return product.image;
+      if (product.images && product.images.length > 0) return product.images[0];
+      return "";
+    };
+
+    // Safe product for AddToCartButton
+    const cartProduct = {
+      _id: product._id,
+      name: product.name || "Product",
+      price: finalPrice,
+      inStock: product.inStock || false,
+      image: getImageUrl(),
+    };
 
     return (
       <div
@@ -140,8 +163,8 @@ const ProductCard = React.memo(
         <Link href={`/product/${product._id}`}>
           <div className="relative aspect-square overflow-hidden bg-[#1a1a1a]">
             <OptimizedImage
-              src={product.image || product.images?.[0] || ""}
-              alt={product.name}
+              src={getImageUrl()}
+              alt={product.name || "Product"}
             />
 
             {product.badge && (
@@ -186,13 +209,13 @@ const ProductCard = React.memo(
               {categoryName}
             </p>
             <h3 className="text-lg font-normal text-white mb-3 line-clamp-1 group-hover:text-purple-400 transition-colors">
-              {product.name}
+              {product.name || "Unnamed Product"}
             </h3>
             <div className="flex items-baseline gap-2 mb-4">
               <span className="text-xl font-bold text-white">
-                ${finalPrice.toFixed(2)}
+                ${finalPrice?.toFixed(2) || "0.00"}
               </span>
-              {originalPrice > finalPrice && (
+              {originalPrice && originalPrice > finalPrice && (
                 <span className="text-sm text-gray-500 line-through">
                   ${originalPrice.toFixed(2)}
                 </span>
@@ -200,13 +223,7 @@ const ProductCard = React.memo(
             </div>
 
             <AddToCartButton
-              product={{
-                _id: product._id,
-                name: product.name,
-                price: finalPrice,
-                inStock: product.inStock,
-                image: product.image || product.images?.[0],
-              }}
+              product={cartProduct}
               quantity={1}
               variant="default"
               size="md"
@@ -222,11 +239,33 @@ const ProductCard = React.memo(
 ProductCard.displayName = "ProductCard";
 
 // Quick View Modal
-const QuickViewModal = ({ product, isOpen, onClose }: any) => {
+const QuickViewModal = ({ 
+  product, 
+  isOpen, 
+  onClose 
+}: { 
+  product: Product | null; 
+  isOpen: boolean; 
+  onClose: () => void;
+}) => {
   if (!isOpen || !product) return null;
 
   const finalPrice = product.discountPrice || product.price;
   const originalPrice = product.originalPrice || product.price;
+  
+  const getImageUrl = (): string => {
+    if (product.image) return product.image;
+    if (product.images && product.images.length > 0) return product.images[0];
+    return "";
+  };
+
+  const cartProduct = {
+    _id: product._id,
+    name: product.name || "Product",
+    price: finalPrice,
+    inStock: product.inStock || false,
+    image: getImageUrl(),
+  };
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto">
@@ -245,31 +284,25 @@ const QuickViewModal = ({ product, isOpen, onClose }: any) => {
           <div className="grid md:grid-cols-2 gap-8 p-8">
             <div className="relative aspect-square rounded-xl overflow-hidden bg-[#1a1a1a]">
               <img
-                src={product.image || product.images?.[0] || ""}
-                alt={product.name}
+                src={getImageUrl()}
+                alt={product.name || "Product"}
                 className="w-full h-full object-cover"
               />
             </div>
             <div className="space-y-6">
-              <h2 className="text-3xl font-bold text-white">{product.name}</h2>
+              <h2 className="text-3xl font-bold text-white">{product.name || "Product"}</h2>
               <div className="flex items-baseline gap-3">
                 <span className="text-4xl font-bold text-purple-400">
-                  ${finalPrice.toFixed(2)}
+                  ${finalPrice?.toFixed(2) || "0.00"}
                 </span>
-                {originalPrice > finalPrice && (
+                {originalPrice && originalPrice > finalPrice && (
                   <span className="text-xl text-gray-500 line-through">
                     ${originalPrice.toFixed(2)}
                   </span>
                 )}
               </div>
               <AddToCartButton
-                product={{
-                  _id: product._id,
-                  name: product.name,
-                  price: finalPrice,
-                  inStock: product.inStock,
-                  image: product.image || product.images?.[0],
-                }}
+                product={cartProduct}
                 quantity={1}
                 variant="default"
                 size="lg"
@@ -303,16 +336,12 @@ const AllProducts = () => {
   const [loading, setLoading] = useState(true);
   const [categories, setCategories] = useState<Category[]>([]);
   const [selectedCategory, setSelectedCategory] = useState("All");
-  const [selectedPriceRange, setSelectedPriceRange] = useState<string | null>(
-    null,
-  );
+  const [selectedPriceRange, setSelectedPriceRange] = useState<string | null>(null);
   const [showInStockOnly, setShowInStockOnly] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState("featured");
   const [mobileFilterOpen, setMobileFilterOpen] = useState(false);
-  const [quickViewProduct, setQuickViewProduct] = useState<Product | null>(
-    null,
-  );
+  const [quickViewProduct, setQuickViewProduct] = useState<Product | null>(null);
   const [mounted, setMounted] = useState(false);
 
   const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://gamersbd-server.onrender.com";
@@ -330,6 +359,8 @@ const AllProducts = () => {
             id: p._id,
             inStock: (p.stock || 0) > 0,
             finalPrice: p.discountPrice || p.price,
+            // Ensure category is properly handled
+            category: p.category || null,
           }));
           setProducts(fetchedProducts);
         }
@@ -350,7 +381,7 @@ const AllProducts = () => {
       try {
         const response = await axios.get(`${API_URL}/api/categories`);
         if (response.data.success) {
-          setCategories(response.data.data);
+          setCategories(response.data.data || []);
         }
       } catch (error) {
         console.error("Failed to fetch categories:", error);
@@ -368,16 +399,14 @@ const AllProducts = () => {
 
     // Category filter
     if (selectedCategory !== "All") {
-      const selectedCat = categories.find((c) => c.name === selectedCategory);
-      if (selectedCat) {
-        filtered = filtered.filter((product) => {
-          const productCategory =
-            typeof product.category === "object"
-              ? product.category.name
-              : product.category;
-          return productCategory === selectedCategory;
-        });
-      }
+      filtered = filtered.filter((product) => {
+        const productCategory = (() => {
+          if (!product.category) return null;
+          if (typeof product.category === "object") return product.category.name;
+          return product.category;
+        })();
+        return productCategory === selectedCategory;
+      });
     }
 
     // Price filter
@@ -399,7 +428,7 @@ const AllProducts = () => {
     // Search filter
     if (searchQuery) {
       filtered = filtered.filter((product) =>
-        product.name.toLowerCase().includes(searchQuery.toLowerCase()),
+        product.name?.toLowerCase().includes(searchQuery.toLowerCase())
       );
     }
 
@@ -407,12 +436,12 @@ const AllProducts = () => {
     switch (sortBy) {
       case "price-low":
         filtered.sort(
-          (a, b) => (a.discountPrice || a.price) - (b.discountPrice || b.price),
+          (a, b) => (a.discountPrice || a.price) - (b.discountPrice || b.price)
         );
         break;
       case "price-high":
         filtered.sort(
-          (a, b) => (b.discountPrice || b.price) - (a.discountPrice || a.price),
+          (a, b) => (b.discountPrice || b.price) - (a.discountPrice || a.price)
         );
         break;
       case "rating":
@@ -421,21 +450,25 @@ const AllProducts = () => {
     }
 
     return filtered;
-  }, [
-    products,
-    selectedCategory,
-    selectedPriceRange,
-    showInStockOnly,
-    searchQuery,
-    sortBy,
-    categories,
-  ]);
+  }, [products, selectedCategory, selectedPriceRange, showInStockOnly, searchQuery, sortBy]);
 
   const clearFilters = () => {
     setSelectedCategory("All");
     setSelectedPriceRange(null);
     setShowInStockOnly(false);
     setSearchQuery("");
+  };
+
+  // Helper function to get product count by category
+  const getProductCountByCategory = (categoryName: string): number => {
+    return products.filter((product) => {
+      const productCategory = (() => {
+        if (!product.category) return null;
+        if (typeof product.category === "object") return product.category.name;
+        return product.category;
+      })();
+      return productCategory === categoryName;
+    }).length;
   };
 
   if (!mounted) return null;
@@ -520,17 +553,7 @@ const AllProducts = () => {
                       />
                       <span className="text-sm text-gray-400">{cat.name}</span>
                       <span className="text-xs text-gray-600 ml-auto">
-                        (
-                        {
-                          products.filter((p) => {
-                            const productCat =
-                              typeof p.category === "object"
-                                ? p.category.name
-                                : p.category;
-                            return productCat === cat.name;
-                          }).length
-                        }
-                        )
+                        ({getProductCountByCategory(cat.name)})
                       </span>
                     </label>
                   ))}

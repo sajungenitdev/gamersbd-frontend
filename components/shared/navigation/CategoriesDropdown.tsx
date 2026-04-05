@@ -18,6 +18,7 @@ interface CategoriesDropdownProps {
   onCategoryChange: (category: string) => void;
   onMouseEnter: () => void;
   onMouseLeave: () => void;
+  onCloseDropdown?: () => void; // Add this prop for closing the dropdown
   isSticky?: boolean;
 }
 
@@ -27,6 +28,7 @@ const CategoriesDropdown = ({
   onCategoryChange,
   onMouseEnter,
   onMouseLeave,
+  onCloseDropdown,
   isSticky = false,
 }: CategoriesDropdownProps) => {
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -52,6 +54,16 @@ const CategoriesDropdown = ({
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, "-")
       .replace(/^-+|-+$/g, "");
+  };
+
+  // Handle link click - close dropdown
+  const handleLinkClick = (e?: React.MouseEvent) => {
+    if (e) {
+      e.stopPropagation();
+    }
+    if (onCloseDropdown) {
+      onCloseDropdown();
+    }
   };
 
   const hasCategories = categories.length > 0;
@@ -83,6 +95,7 @@ const CategoriesDropdown = ({
           </p>
           <Link
             href="/"
+            onClick={handleLinkClick}
             className="inline-flex items-center px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-lato font-medium rounded-lg transition-colors"
           >
             Go to Homepage
@@ -117,7 +130,10 @@ const CategoriesDropdown = ({
             {categories.map((category) => (
               <button
                 key={category._id}
-                onClick={() => onCategoryChange(category.name)}
+                onClick={() => {
+                  onCategoryChange(category.name);
+                  // Don't close dropdown when just changing category view
+                }}
                 onMouseEnter={() => onCategoryChange(category.name)}
                 className={`w-full text-left px-3 py-2.5 rounded-lg transition-all duration-200 group ${
                   activeCategoryTab === category.name
@@ -151,6 +167,7 @@ const CategoriesDropdown = ({
 
           <Link
             href="/all-categories"
+            onClick={handleLinkClick}
             className="flex items-center justify-between mt-6 px-3 py-2 text-sm text-gray-400 dark:text-gray-500 hover:text-blue-400 dark:hover:text-blue-600 font-medium border-t border-[#3a3a3a] dark:border-gray-300 pt-4 group"
           >
             <span>View All Categories</span>
@@ -179,6 +196,7 @@ const CategoriesDropdown = ({
             {activeCategory && (
               <Link
                 href={`/category/${createSlug(activeCategory.name)}`}
+                onClick={handleLinkClick}
                 className="text-sm text-blue-400 dark:text-blue-600 hover:text-blue-300 dark:hover:text-blue-700 flex items-center gap-1 group"
               >
                 View All
@@ -207,6 +225,7 @@ const CategoriesDropdown = ({
                     <Link
                       key={sub._id}
                       href={`/${sub.name.toLowerCase().replace(/\s+/g, '')}/${sub._id}`}
+                      onClick={handleLinkClick}
                       className="p-4 rounded-lg bg-[#333333] dark:bg-gray-100 hover:bg-[#3a3a3a] dark:hover:bg-gray-200 transition-all duration-200 border border-[#3a3a3a] dark:border-gray-300 hover:border-blue-600/50 dark:hover:border-blue-400/50 group"
                     >
                       <span className="font-medium block text-white dark:text-[#2a2a2a] group-hover:text-blue-400 dark:group-hover:text-blue-600 transition-colors">
@@ -255,6 +274,7 @@ const CategoriesDropdown = ({
                   </p>
                   <Link
                     href={`/category/${createSlug(activeCategory.name)}`}
+                    onClick={handleLinkClick}
                     className="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors"
                   >
                     Browse {activeCategory.name}

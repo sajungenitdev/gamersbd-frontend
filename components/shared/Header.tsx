@@ -205,6 +205,11 @@ export default function Header() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  // Function to close all dropdowns
+  const closeAllDropdowns = () => {
+    setActiveDropdown(null);
+  };
+
   const handleMouseEnter = (dropdown: string) => {
     console.log("Mouse entered:", dropdown);
     if (dropdownTimerRef.current) {
@@ -375,6 +380,7 @@ export default function Header() {
               onCategoryChange={setActiveCategoryTab}
               onMouseEnter={() => handleMouseEnter("categories")}
               onMouseLeave={handleMouseLeave}
+              onCloseDropdown={closeAllDropdowns} // Add this prop
               isSticky={isSticky}
             />
           )}
@@ -404,6 +410,7 @@ export default function Header() {
         categories={categories}
         specialized={specialized}
         offers={offers}
+        onClose={() => setIsMobileMenuOpen(false)} // Add close handler
       />
 
       {/* Add custom animation styles */}
