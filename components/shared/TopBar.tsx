@@ -16,7 +16,7 @@ const TopBar = () => {
   const [isCartDrawerOpen, setIsCartDrawerOpen] = useState(false);
   const [isHoveringCart, setIsHoveringCart] = useState(false);
   const [isHoveringDrawer, setIsHoveringDrawer] = useState(false);
-  const closeTimerRef = useRef<NodeJS.Timeout>();
+  const closeTimerRef = useRef<NodeJS.Timeout| null>(null);
 
   const getUserInitials = () => {
     if (!user?.name) return "U";
