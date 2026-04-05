@@ -3,7 +3,7 @@
 
 import React, { useState, useEffect } from "react";
 import { ShoppingCart } from "lucide-react";
-import { useCart } from "@/contexts/CartContext";
+import { useCart } from "../../app/contexts/CartContext";
 
 interface CartIconProps {
   onClick: () => void;
