@@ -1,8 +1,8 @@
 // components/AuthGuard.tsx
 "use client";
-import { useUserAuth } from "@/app/contexts/UserAuthContext";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
+import { useUserAuth } from "../../app/contexts/UserAuthContext";
 
 export function withAuth<P extends object>(
   Component: React.ComponentType<P>,
