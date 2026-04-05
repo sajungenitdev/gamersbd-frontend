@@ -66,7 +66,13 @@ export default function UserProfile() {
     const file = e.target.files?.[0];
     if (file) {
       // Validate file type
-      const validTypes = ['image/jpeg', 'image/png', 'image/jpg', 'image/gif', 'image/webp'];
+      const validTypes = [
+        "image/jpeg",
+        "image/png",
+        "image/jpg",
+        "image/gif",
+        "image/webp",
+      ];
       if (!validTypes.includes(file.type)) {
         setError("Please upload a valid image file (JPEG, PNG, GIF, WEBP)");
         setTimeout(() => setError(""), 3000);
@@ -93,18 +99,41 @@ export default function UserProfile() {
   };
 
   const handleInputChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
   ) => {
     const { name, value } = e.target;
+
     if (name.includes(".")) {
-      const [parent, child] = name.split(".");
-      setFormData((prev) => ({
-        ...prev,
-        [parent]: {
-          ...prev[parent as keyof typeof prev],
-          [child]: value,
-        },
-      }));
+      const [parent, child] = name.split(".") as [
+        keyof typeof formData,
+        string,
+      ];
+
+      setFormData((prev) => {
+        // Ensure parent exists and is an object
+        const parentValue = prev[parent];
+
+        // Type guard: check if parentValue is an object and not null
+        if (
+          parentValue &&
+          typeof parentValue === "object" &&
+          !Array.isArray(parentValue)
+        ) {
+          return {
+            ...prev,
+            [parent]: {
+              ...parentValue,
+              [child]: value,
+            },
+          };
+        }
+
+        // Fallback if parent doesn't exist or isn't an object
+        return {
+          ...prev,
+          [parent]: { [child]: value } as any,
+        };
+      });
     } else {
       setFormData((prev) => ({
         ...prev,
@@ -112,7 +141,6 @@ export default function UserProfile() {
       }));
     }
   };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
@@ -145,7 +173,7 @@ export default function UserProfile() {
             Authorization: `Bearer ${token}`,
           },
           body: JSON.stringify(updateData),
-        }
+        },
       );
 
       const data = await response.json();
@@ -161,7 +189,7 @@ export default function UserProfile() {
         email: formData.email,
         avatar: avatarBase64 || user?.avatar,
       };
-      
+
       updateUser(updatedUserData);
 
       setSuccess("Profile updated successfully!");
@@ -346,9 +374,7 @@ export default function UserProfile() {
               <div className="flex-1">
                 <p className="text-sm text-gray-400">Phone Number</p>
                 {!isEditing ? (
-                  <p className="text-white">
-                    {user?.phone || "Not provided"}
-                  </p>
+                  <p className="text-white">{user?.phone || "Not provided"}</p>
                 ) : (
                   <input
                     type="tel"
@@ -552,9 +578,7 @@ export default function UserProfile() {
               <Calendar className="w-5 h-5 text-purple-400" />
               <div>
                 <p className="text-sm text-gray-400">Member Since</p>
-                <p className="text-white">
-                  {new Date().getFullYear()}
-                </p>
+                <p className="text-white">{new Date().getFullYear()}</p>
               </div>
             </div>
           </div>
