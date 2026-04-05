@@ -45,3 +45,8 @@
 .site-text-black {
   color: black;
 }
+
+
+.sidebar-filter{
+  margin-top: 0 !important;
+}
