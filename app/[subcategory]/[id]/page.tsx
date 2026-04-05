@@ -222,6 +222,7 @@ const ProductCard = ({ product, getCategoryName }: { product: Product; getCatego
     toast.success(`${product.name} added to cart!`);
   };
 
+  const imageUrlString = Array.isArray(imageUrl) ? imageUrl[0] : imageUrl;
   return (
     <Link href={`/product/${product._id}`}>
       <div className="relative group overflow-hidden rounded-2xl transition-all duration-300">
@@ -231,7 +232,7 @@ const ProductCard = ({ product, getCategoryName }: { product: Product; getCatego
             alt={product.name}
             className="absolute inset-0 w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-500 opacity-100"
             loading="lazy"
-            src={imageUrl}
+            src={imageUrlString || '/fallback-image.jpg'} // Add a fallback
           />
           
           {/* Discount Badge */}
