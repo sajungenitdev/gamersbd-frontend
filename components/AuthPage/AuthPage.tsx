@@ -8,15 +8,12 @@ import {
   EyeOff,
   LogIn,
   UserPlus,
-  ArrowRight,
   CheckCircle,
   AlertCircle,
   Shield,
-  Zap,
   Trophy,
-  ChevronRight,
-  Star,
 } from "lucide-react";
+import { useUserAuth } from "../../app/contexts/UserAuthContext";
 
 // --- Sub-components ---
 
@@ -37,7 +34,9 @@ const InputField = ({
     <div className="space-y-1.5 w-full">
       <div className="relative group">
         <div
-          className={`absolute -inset-0.5 bg-gradient-to-r from-purple-500 to-cyan-500 rounded-xl blur opacity-20 group-hover:opacity-40 transition duration-300 ${focused ? "opacity-60" : ""}`}
+          className={`absolute -inset-0.5 bg-gradient-to-r from-purple-500 to-cyan-500 rounded-xl blur opacity-20 group-hover:opacity-40 transition duration-300 ${
+            focused ? "opacity-60" : ""
+          }`}
         ></div>
         <div className="relative">
           <Icon
@@ -56,8 +55,8 @@ const InputField = ({
               error
                 ? "border-red-500/50"
                 : focused
-                  ? "border-purple-500/50"
-                  : "border-white/10"
+                ? "border-purple-500/50"
+                : "border-white/10"
             } rounded-xl outline-none text-white placeholder-gray-500 transition-all duration-300`}
           />
           {isPassword && (
@@ -66,17 +65,13 @@ const InputField = ({
               onClick={onToggle}
               className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-white transition-colors"
             >
-              {showToggle ? (
-                <EyeOff className="w-5 h-5" />
-              ) : (
-                <Eye className="w-5 h-5" />
-              )}
+              {showToggle ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
             </button>
           )}
         </div>
       </div>
       {error && (
-        <p className="text-[12px] text-red-400 flex items-center gap-1.5 ml-1 animate-in fade-in slide-in-from-left-1">
+        <p className="text-[12px] text-red-400 flex items-center gap-1.5 ml-1">
           <AlertCircle className="w-3.5 h-3.5" />
           {error}
         </p>
@@ -84,6 +79,7 @@ const InputField = ({
     </div>
   );
 };
+
 
 const PasswordStrength = ({ password }: { password: string }) => {
   const getStrength = () => {
@@ -109,7 +105,9 @@ const PasswordStrength = ({ password }: { password: string }) => {
       {[1, 2, 3, 4].map((i) => (
         <div
           key={i}
-          className={`h-full flex-1 rounded-full transition-all duration-500 ${i <= strength ? colors[strength] : "bg-white/10"}`}
+          className={`h-full flex-1 rounded-full transition-all duration-500 ${
+            i <= strength ? colors[strength] : "bg-white/10"
+          }`}
         />
       ))}
     </div>
@@ -122,20 +120,27 @@ const LoginForm = ({ onSwitch, onSuccess }: any) => {
   const [formData, setFormData] = useState({ email: "", password: "" });
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [rememberMe, setRememberMe] = useState(false);
+  const { login } = useUserAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError("");
     setIsLoading(true);
-    await new Promise((r) => setTimeout(r, 1500));
-    setIsLoading(false);
-    onSuccess();
+
+    try {
+      await login(formData.email, formData.password, rememberMe);
+      onSuccess();
+    } catch (err: any) {
+      setError(err.message || "Login failed. Please check your credentials.");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
-    <form
-      onSubmit={handleSubmit}
-      className="space-y-5 animate-in fade-in slide-in-from-right-4 duration-500"
-    >
+    <form onSubmit={handleSubmit} className="space-y-5">
       <header className="mb-8">
         <h2 className="text-3xl font-bold text-white tracking-tight">Login</h2>
         <p className="text-gray-400 mt-2">
@@ -143,14 +148,19 @@ const LoginForm = ({ onSwitch, onSuccess }: any) => {
         </p>
       </header>
 
+      {error && (
+        <div className="bg-red-500/10 border border-red-500/50 rounded-xl p-3 flex items-center gap-2 text-red-400 text-sm">
+          <AlertCircle className="w-4 h-4" />
+          {error}
+        </div>
+      )}
+
       <InputField
         type="email"
         placeholder="Email Address"
         icon={Mail}
         value={formData.email}
-        onChange={(e: any) =>
-          setFormData({ ...formData, email: e.target.value })
-        }
+        onChange={(e: any) => setFormData({ ...formData, email: e.target.value })}
       />
 
       <div className="space-y-1">
@@ -161,11 +171,18 @@ const LoginForm = ({ onSwitch, onSuccess }: any) => {
           showToggle={showPassword}
           onToggle={() => setShowPassword(!showPassword)}
           value={formData.password}
-          onChange={(e: any) =>
-            setFormData({ ...formData, password: e.target.value })
-          }
+          onChange={(e: any) => setFormData({ ...formData, password: e.target.value })}
         />
-        <div className="flex justify-end">
+        <div className="flex justify-between items-center">
+          <label className="flex items-center gap-2 text-sm text-gray-400 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={rememberMe}
+              onChange={(e) => setRememberMe(e.target.checked)}
+              className="rounded border-gray-600 bg-transparent text-purple-500 focus:ring-purple-500"
+            />
+            Remember me
+          </label>
           <button
             type="button"
             className="text-xs text-purple-400 hover:text-purple-300 transition-colors"
@@ -178,11 +195,9 @@ const LoginForm = ({ onSwitch, onSuccess }: any) => {
       <button
         type="submit"
         disabled={isLoading}
-        className="w-full py-4 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-semibold rounded-xl shadow-[0_0_20px_rgba(147,51,234,0.3)] hover:shadow-[0_0_30px_rgba(147,51,234,0.5)] transition-all duration-300 flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed overflow-hidden relative group"
+        className="w-full py-4 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-semibold rounded-xl shadow-[0_0_20px_rgba(147,51,234,0.3)] transition-all duration-300 flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed overflow-hidden relative group"
       >
-        <span
-          className={`flex items-center gap-2 transition-transform duration-300 ${isLoading ? "-translate-y-10" : ""}`}
-        >
+        <span className={`flex items-center gap-2 ${isLoading ? "opacity-0" : ""}`}>
           <LogIn className="w-5 h-5" /> Sign In
         </span>
         {isLoading && (
@@ -214,46 +229,65 @@ const RegisterForm = ({ onSwitch, onSuccess }: any) => {
   });
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
+  const { register } = useUserAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError("");
+
+    if (!formData.name.trim()) {
+      setError("Full name is required");
+      return;
+    }
+    if (!formData.email.trim()) {
+      setError("Email is required");
+      return;
+    }
+    if (formData.password.length < 6) {
+      setError("Password must be at least 6 characters");
+      return;
+    }
+
     setIsLoading(true);
-    await new Promise((r) => setTimeout(r, 1500));
-    setIsLoading(false);
-    onSuccess();
+
+    try {
+      await register(formData);
+      onSuccess();
+    } catch (err: any) {
+      setError(err.message || "Registration failed. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
-    <form
-      onSubmit={handleSubmit}
-      className="space-y-4 animate-in fade-in slide-in-from-right-4 duration-500"
-    >
+    <form onSubmit={handleSubmit} className="space-y-4">
       <header className="mb-6">
-        <h2 className="text-3xl font-bold text-white tracking-tight">
-          Register
-        </h2>
-        <p className="text-gray-400 mt-2">
-          Join thousands of players worldwide.
-        </p>
+        <h2 className="text-3xl font-bold text-white tracking-tight">Register</h2>
+        <p className="text-gray-400 mt-2">Join thousands of players worldwide.</p>
       </header>
+
+      {error && (
+        <div className="bg-red-500/10 border border-red-500/50 rounded-xl p-3 flex items-center gap-2 text-red-400 text-sm">
+          <AlertCircle className="w-4 h-4" />
+          {error}
+        </div>
+      )}
 
       <InputField
         type="text"
         placeholder="Full Name"
         icon={User}
         value={formData.name}
-        onChange={(e: any) =>
-          setFormData({ ...formData, name: e.target.value })
-        }
+        onChange={(e: any) => setFormData({ ...formData, name: e.target.value })}
       />
       <InputField
         type="email"
         placeholder="Email Address"
         icon={Mail}
         value={formData.email}
-        onChange={(e: any) =>
-          setFormData({ ...formData, email: e.target.value })
-        }
+        onChange={(e: any) => setFormData({ ...formData, email: e.target.value })}
       />
       <div>
         <InputField
@@ -263,11 +297,12 @@ const RegisterForm = ({ onSwitch, onSuccess }: any) => {
           showToggle={showPassword}
           onToggle={() => setShowPassword(!showPassword)}
           value={formData.password}
-          onChange={(e: any) =>
-            setFormData({ ...formData, password: e.target.value })
-          }
+          onChange={(e: any) => setFormData({ ...formData, password: e.target.value })}
         />
         <PasswordStrength password={formData.password} />
+        <p className="text-xs text-gray-500 mt-2">
+          Password must be at least 6 characters
+        </p>
       </div>
 
       <button
@@ -275,11 +310,8 @@ const RegisterForm = ({ onSwitch, onSuccess }: any) => {
         disabled={isLoading}
         className="w-full mt-4 py-4 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-semibold rounded-xl shadow-[0_0_20px_rgba(147,51,234,0.3)] transition-all duration-300 flex items-center justify-center gap-2 group"
       >
-        <span
-          className={`flex items-center gap-2 ${isLoading ? "hidden" : ""}`}
-        >
-          <UserPlus className="w-5 h-5 group-hover:scale-110 transition-transform" />{" "}
-          Create Account
+        <span className={`flex items-center gap-2 ${isLoading ? "hidden" : ""}`}>
+          <UserPlus className="w-5 h-5 group-hover:scale-110 transition-transform" /> Create Account
         </span>
         {isLoading && (
           <div className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
@@ -300,7 +332,7 @@ const RegisterForm = ({ onSwitch, onSuccess }: any) => {
   );
 };
 
-const AuthPage = () => {
+export default function AuthPage() {
   const [isLogin, setIsLogin] = useState(true);
   const [showSuccess, setShowSuccess] = useState(false);
 
@@ -313,14 +345,14 @@ const AuthPage = () => {
       </div>
 
       <div className="w-full max-w-5xl grid lg:grid-cols-2 bg-[#161618]/40 backdrop-blur-2xl rounded-[2.5rem] border border-white/5 shadow-2xl overflow-hidden">
-        {/* Left Side: Brand/Visuals (Visible on Desktop) */}
+        {/* Left Side: Brand/Visuals */}
         <div className="hidden lg:flex flex-col justify-between p-12 bg-gradient-to-br from-purple-600/10 via-transparent to-transparent relative overflow-hidden">
           <div className="absolute top-0 left-0 w-full h-full bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-5"></div>
 
           <div className="relative z-10">
             <div className="flex items-center gap-2 mb-12">
               <span className="text-xl font-bold text-white tracking-wider uppercase">
-               Gamers BD
+                Gamers BD
               </span>
             </div>
 
@@ -343,9 +375,7 @@ const AuthPage = () => {
               </div>
               <div>
                 <h4 className="text-white font-semibold">Secure by Default</h4>
-                <p className="text-gray-500 text-sm">
-                  Enterprise-grade encryption.
-                </p>
+                <p className="text-gray-500 text-sm">Enterprise-grade encryption.</p>
               </div>
             </div>
             <div className="flex items-center gap-4 p-4 bg-white/5 rounded-2xl border border-white/5 backdrop-blur-md">
@@ -354,9 +384,7 @@ const AuthPage = () => {
               </div>
               <div>
                 <h4 className="text-white font-semibold">Pro Stats</h4>
-                <p className="text-gray-500 text-sm">
-                  Detailed performance tracking.
-                </p>
+                <p className="text-gray-500 text-sm">Detailed performance tracking.</p>
               </div>
             </div>
           </div>
@@ -366,51 +394,10 @@ const AuthPage = () => {
         <div className="p-8 lg:p-16 flex flex-col justify-center bg-[#111113]/60">
           <div className="w-full max-w-md mx-auto">
             {isLogin ? (
-              <LoginForm
-                onSwitch={() => setIsLogin(false)}
-                onSuccess={() => setShowSuccess(true)}
-              />
+              <LoginForm onSwitch={() => setIsLogin(false)} onSuccess={() => setShowSuccess(true)} />
             ) : (
-              <RegisterForm
-                onSwitch={() => setIsLogin(true)}
-                onSuccess={() => setShowSuccess(true)}
-              />
+              <RegisterForm onSwitch={() => setIsLogin(true)} onSuccess={() => setShowSuccess(true)} />
             )}
-
-            {/* Social Logins */}
-            <div className="mt-8">
-              <div className="relative mb-6">
-                <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-white/5"></div>
-                </div>
-                <div className="relative flex justify-center text-xs uppercase">
-                  <span className="px-2 bg-transparent text-gray-500 tracking-widest">
-                    Or login with
-                  </span>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <button className="flex items-center justify-center gap-2 py-3 px-4 bg-white/5 hover:bg-white/10 border border-white/5 rounded-xl transition-all">
-                  <img
-                    src="https://www.svgrepo.com/show/475656/google-color.svg"
-                    className="w-5 h-5"
-                    alt="Google"
-                  />
-                  <span className="text-white text-sm font-medium">Google</span>
-                </button>
-                <button className="flex items-center justify-center gap-2 py-3 px-4 bg-white/5 hover:bg-white/10 border border-white/5 rounded-xl transition-all">
-                  <img
-                    src="https://upload.wikimedia.org/wikipedia/commons/thumb/2/25/Microsoft_icon.svg/960px-Microsoft_icon.svg.png"
-                    className="w-5 h-5"
-                    alt="Microsoft"
-                  />
-                  <span className="text-white text-sm font-medium">
-                    Microsoft
-                  </span>
-                </button>
-              </div>
-            </div>
           </div>
         </div>
       </div>
@@ -437,6 +424,4 @@ const AuthPage = () => {
       )}
     </div>
   );
-};
-
-export default AuthPage;
+}

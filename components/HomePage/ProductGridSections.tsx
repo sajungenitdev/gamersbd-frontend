@@ -13,7 +13,7 @@ const ProductGridSections = () => {
   const sections = [
     {
       id: "new-releases",
-      title: "New Releases",
+      title: "Top Sellers",
       icon: <SparklesIcon className="w-5 h-5" />,
       products: [
         {
@@ -44,7 +44,7 @@ const ProductGridSections = () => {
     },
     {
       id: "top-sellers",
-      title: "Top Sellers",
+      title: "Top Free to Play",
       icon: <TrendingUpIcon className="w-5 h-5" />,
       products: [
         {
@@ -75,7 +75,7 @@ const ProductGridSections = () => {
     },
     {
       id: "coming-soon",
-      title: "Coming Soon",
+      title: "Top Upcoming Wishlisted",
       icon: <ClockIcon className="w-5 h-5" />,
       products: [
         {
@@ -144,7 +144,7 @@ const ProductGridSections = () => {
                     className="flex gap-4 p-2 items-center rounded-lg hover:bg-gray-800 dark:hover:bg-gray-100 transition-colors cursor-pointer group"
                   >
                     {/* Product Image */}
-                    <div className="w-48 h-48 rounded-lg overflow-hidden bg-gray-800 dark:bg-gray-200 flex-shrink-0">
+                    <div className="w-28 h-36 rounded-lg overflow-hidden bg-gray-800 dark:bg-gray-200 flex-shrink-0">
                       <img
                         src={product.image}
                         alt={product.name}

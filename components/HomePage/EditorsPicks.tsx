@@ -274,7 +274,7 @@ const EditorsPicks = () => {
                 }}
                 className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
                   activeFilter === filter.id
-                    ? "bg-blue-600 text-white shadow-lg shadow-blue-600/25"
+                    ? "bg-orange-600 text-white shadow-lg shadow-orange-600/25"
                     : "bg-gray-800 dark:bg-gray-200 text-gray-300 dark:text-gray-700 hover:bg-gray-700 dark:hover:bg-gray-300"
                 }`}
               >
@@ -319,7 +319,7 @@ const EditorsPicks = () => {
                           product.badge === "Editor's Choice"
                             ? "bg-purple-500 text-white"
                             : product.badge === "Trending"
-                              ? "bg-blue-500 text-white"
+                              ? "bg-orange-500 text-white"
                               : product.badge === "Best Seller"
                                 ? "bg-green-500 text-white"
                                 : product.badge === "Top Rated"
@@ -449,7 +449,7 @@ const EditorsPicks = () => {
                       </div>
 
                       {/* Add to Cart Button */}
-                      <button className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium flex items-center justify-center gap-2 transition-colors">
+                      <button className="w-full py-2.5 bg-orange-600 hover:bg-orange-700 text-white rounded-lg font-medium flex items-center justify-center gap-2 transition-colors">
                         <ShoppingCartIcon className="w-4 h-4" />
                         Add to Cart
                       </button>
@@ -490,7 +490,7 @@ const EditorsPicks = () => {
               onClick={() => setCurrentIndex(index)}
               className={`transition-all ${
                 index === currentIndex
-                  ? "w-8 h-2 bg-blue-600 rounded-full"
+                  ? "w-8 h-2 bg-orange-600 rounded-full"
                   : "w-2 h-2 bg-gray-600 dark:bg-gray-400 rounded-full hover:bg-gray-500 dark:hover:bg-gray-500"
               }`}
               aria-label={`Go to slide ${index + 1}`}

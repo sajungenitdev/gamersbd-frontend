@@ -46,6 +46,14 @@ const CategoriesDropdown = ({
     }
   }, [categories, activeCategoryTab]);
 
+  // Helper function to create slug from category name
+  const createSlug = (name: string) => {
+    return name
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "");
+  };
+
   const hasCategories = categories.length > 0;
   const activeCategory = hasCategories
     ? categories.find((cat) => cat.name === activeCategoryTab) || categories[0]
@@ -56,10 +64,10 @@ const CategoriesDropdown = ({
       <div
         ref={dropdownRef}
         className={`bg-[#2a2a2a] dark:bg-[#f5f5f5] shadow-xl border-t border-[#3a3a3a] dark:border-gray-300 py-12 max-w-7xl mx-auto px-4 transition-all duration-300 ${
-          isSticky ? 'fixed left-0 right-0 mx-auto' : ''
+          isSticky ? "fixed left-0 right-0 mx-auto" : ""
         }`}
         style={{
-          top: isSticky ? '73px' : 'auto',
+          top: isSticky ? "73px" : "auto",
           zIndex: 100,
         }}
         onMouseEnter={onMouseEnter}
@@ -73,8 +81,8 @@ const CategoriesDropdown = ({
           <p className="text-gray-300 dark:text-gray-600 mb-6">
             There are no categories available at the moment.
           </p>
-          <Link 
-            href="/" 
+          <Link
+            href="/"
             className="inline-flex items-center px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-lato font-medium rounded-lg transition-colors"
           >
             Go to Homepage
@@ -88,13 +96,13 @@ const CategoriesDropdown = ({
     <div
       ref={dropdownRef}
       className={`bg-[#2a2a2a] dark:bg-[#f5f5f5] shadow-xl border-t border-[#3a3a3a] dark:border-gray-300 py-8 max-w-7xl mx-auto px-4 transition-all duration-300 ${
-        isSticky ? 'fixed left-0 right-0 mx-auto' : ''
+        isSticky ? "fixed left-0 right-0 mx-auto" : ""
       }`}
       style={{
-        top: isSticky ? '73px' : 'auto',
+        top: isSticky ? "73px" : "auto",
         zIndex: 100,
-        maxHeight: 'calc(100vh - 100px)',
-        overflowY: 'auto',
+        maxHeight: "calc(100vh - 100px)",
+        overflowY: "auto",
       }}
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
@@ -121,8 +129,8 @@ const CategoriesDropdown = ({
                 {category.subcategories.length > 0 && (
                   <svg
                     className={`w-4 h-4 float-right mt-1 transition-all ${
-                      activeCategoryTab === category.name 
-                        ? "text-white translate-x-0.5" 
+                      activeCategoryTab === category.name
+                        ? "text-white translate-x-0.5"
                         : "text-gray-500 dark:text-gray-400 group-hover:text-gray-300 dark:group-hover:text-[#2a2a2a]"
                     }`}
                     fill="none"
@@ -142,7 +150,7 @@ const CategoriesDropdown = ({
           </div>
 
           <Link
-            href="/categories"
+            href="/all-categories"
             className="flex items-center justify-between mt-6 px-3 py-2 text-sm text-gray-400 dark:text-gray-500 hover:text-blue-400 dark:hover:text-blue-600 font-medium border-t border-[#3a3a3a] dark:border-gray-300 pt-4 group"
           >
             <span>View All Categories</span>
@@ -162,7 +170,7 @@ const CategoriesDropdown = ({
           </Link>
         </div>
 
-        {/* Right Side - Subcategories */}
+        {/* Right Side - Subcategories with CLEAN URLs */}
         <div className="w-3/4">
           <div className="flex justify-between items-center mb-4">
             <h3 className="font-bold font-lato text-lg text-white dark:text-[#2a2a2a]">
@@ -170,7 +178,7 @@ const CategoriesDropdown = ({
             </h3>
             {activeCategory && (
               <Link
-                href={`/category/${activeCategory._id}`}
+                href={`/category/${createSlug(activeCategory.name)}`}
                 className="text-sm text-blue-400 dark:text-blue-600 hover:text-blue-300 dark:hover:text-blue-700 flex items-center gap-1 group"
               >
                 View All
@@ -198,22 +206,34 @@ const CategoriesDropdown = ({
                   {activeCategory.subcategories.map((sub) => (
                     <Link
                       key={sub._id}
-                      href={`/category/${sub._id}`}
+                      href={`/${sub.name.toLowerCase().replace(/\s+/g, '')}/${sub._id}`}
                       className="p-4 rounded-lg bg-[#333333] dark:bg-gray-100 hover:bg-[#3a3a3a] dark:hover:bg-gray-200 transition-all duration-200 border border-[#3a3a3a] dark:border-gray-300 hover:border-blue-600/50 dark:hover:border-blue-400/50 group"
                     >
                       <span className="font-medium block text-white dark:text-[#2a2a2a] group-hover:text-blue-400 dark:group-hover:text-blue-600 transition-colors">
                         {sub.name}
                       </span>
+
                       {sub.description && (
                         <span className="text-xs text-gray-400 dark:text-gray-500 mt-1 block">
                           {sub.description.substring(0, 60)}
-                          {sub.description.length > 60 ? '...' : ''}
+                          {sub.description.length > 60 ? "..." : ""}
                         </span>
                       )}
+
                       {sub.image && (
                         <div className="mt-2 flex items-center gap-1 text-xs text-gray-500 dark:text-gray-500">
-                          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                          <svg
+                            className="w-3 h-3"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth="2"
+                              d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                            />
                           </svg>
                           <span>Has image</span>
                         </div>
@@ -234,7 +254,7 @@ const CategoriesDropdown = ({
                     No subcategories found
                   </p>
                   <Link
-                    href={`/category/${activeCategory._id}`}
+                    href={`/category/${createSlug(activeCategory.name)}`}
                     className="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors"
                   >
                     Browse {activeCategory.name}

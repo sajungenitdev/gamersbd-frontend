@@ -8,12 +8,15 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@headlessui/react": "^2.2.9",
+    "axios": "^1.14.0",
     "daisyui": "^4.12.0",
     "lucide-react": "^0.473.0",
     "next": "latest",
     "next-themes": "^0.3.0",
     "react": "latest",
-    "react-dom": "latest"
+    "react-dom": "latest",
+    "react-hot-toast": "^2.6.0"
   },
   "devDependencies": {
     "@types/node": "25.3.0",

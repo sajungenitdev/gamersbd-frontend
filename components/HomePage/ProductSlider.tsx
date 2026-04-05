@@ -76,9 +76,9 @@ const ProductSlider = () => {
   const [imageErrors, setImageErrors] = useState<{ [key: number]: boolean }>(
     {},
   );
-  const [loadingTimeout, setLoadingTimeout] = useState<{ [key: number]: boolean }>(
-    {},
-  );
+  const [loadingTimeout, setLoadingTimeout] = useState<{
+    [key: number]: boolean;
+  }>({});
   const sliderRef = useRef<HTMLDivElement>(null);
 
   const getItemsPerView = () => {
@@ -243,11 +243,13 @@ const ProductSlider = () => {
                   {/* Product Image with Loading State */}
                   <div className="relative w-full aspect-square overflow-hidden rounded-2xl bg-gray-800 dark:bg-gray-200">
                     {/* Loading Spinner - Show only if not loaded and no error and no timeout */}
-                    {!imagesLoaded[product.id] && !imageErrors[product.id] && !loadingTimeout[product.id] && (
-                      <div className="absolute inset-0 flex items-center justify-center z-10 bg-gray-800 dark:bg-gray-200">
-                        <div className="w-8 h-8 border-2 border-purple-500 border-t-transparent rounded-full animate-spin" />
-                      </div>
-                    )}
+                    {!imagesLoaded[product.id] &&
+                      !imageErrors[product.id] &&
+                      !loadingTimeout[product.id] && (
+                        <div className="absolute inset-0 flex items-center justify-center z-10 bg-gray-800 dark:bg-gray-200">
+                          <div className="w-8 h-8 border-2 border-purple-500 border-t-transparent rounded-full animate-spin" />
+                        </div>
+                      )}
 
                     {/* Error Fallback */}
                     {imageErrors[product.id] && (
@@ -261,15 +263,17 @@ const ProductSlider = () => {
                     )}
 
                     {/* Timeout Fallback */}
-                    {loadingTimeout[product.id] && !imagesLoaded[product.id] && !imageErrors[product.id] && (
-                      <div className="absolute inset-0 flex items-center justify-center z-10 bg-gray-800 dark:bg-gray-200">
-                        <div className="text-center">
-                          <div className="text-gray-400 text-xs">
-                            Taking too long
+                    {loadingTimeout[product.id] &&
+                      !imagesLoaded[product.id] &&
+                      !imageErrors[product.id] && (
+                        <div className="absolute inset-0 flex items-center justify-center z-10 bg-gray-800 dark:bg-gray-200">
+                          <div className="text-center">
+                            <div className="text-gray-400 text-xs">
+                              Taking too long
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    )}
+                      )}
 
                     <img
                       src={product.image}
@@ -306,7 +310,7 @@ const ProductSlider = () => {
                     </p>
 
                     <div className="flex items-center justify-between">
-                      <h3 className="text-lg font-normal text-white dark:text-black">
+                      <h3 className="text-lg font-semibold text-white dark:text-black">
                         {product.name}
                       </h3>
                       <button
@@ -318,7 +322,7 @@ const ProductSlider = () => {
                     </div>
 
                     <div className="flex items-center gap-2 mt-2">
-                      <span className="text-white dark:text-black font-semibold text-lg">
+                      <span className="text-white dark:text-black font-normal text-lg">
                         ${product.price}
                       </span>
                       {product.originalPrice && (

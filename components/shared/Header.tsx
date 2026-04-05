@@ -34,7 +34,6 @@ export default function Header() {
 
       try {
         const data = await categoryService.getAllCategories();
-        console.log("Fetched categories:", data);
 
         if (data && data.length > 0) {
           const tree = categoryService.buildCategoryTree(data);

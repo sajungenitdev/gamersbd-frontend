@@ -99,7 +99,9 @@ const RecentUploads = () => {
   const [imageErrors, setImageErrors] = useState<{ [key: number]: boolean }>(
     {},
   );
-  const [loadingTimeout, setLoadingTimeout] = useState<{ [key: number]: boolean }>({});
+  const [loadingTimeout, setLoadingTimeout] = useState<{
+    [key: number]: boolean;
+  }>({});
   const [itemsToShow, setItemsToShow] = useState(4);
 
   useEffect(() => {
@@ -126,7 +128,7 @@ const RecentUploads = () => {
   // Set timeout for each image to prevent infinite loading
   useEffect(() => {
     const timers: NodeJS.Timeout[] = [];
-    
+
     recentUploads.forEach((product) => {
       const timer = setTimeout(() => {
         if (!imagesLoaded[product.id] && !imageErrors[product.id]) {
@@ -135,11 +137,11 @@ const RecentUploads = () => {
           console.log(`Image ${product.id} loading timed out`);
         }
       }, 5000); // 5 second timeout
-      
+
       timers.push(timer);
     });
 
-    return () => timers.forEach(timer => clearTimeout(timer));
+    return () => timers.forEach((timer) => clearTimeout(timer));
   }, [imagesLoaded, imageErrors]);
 
   // Preload images on component mount
@@ -189,12 +191,9 @@ const RecentUploads = () => {
         <div className="flex items-center justify-between mb-10">
           <div>
             <div className="flex items-center gap-3 mb-2">
-              <h2 className="text-3xl md:text-4xl font-bold text-white dark:text-black">
-                Recent Uploads
+              <h2 className="text-3xl md:text-4xl text-white dark:text-black">
+                Top New Releases
               </h2>
-              <span className="px-3 py-1 bg-[#d88616] text-white text-xs font-bold rounded-full animate-pulse">
-                NEW
-              </span>
             </div>
             <p className="text-gray-400 dark:text-gray-600">
               Freshly added games and products
@@ -253,11 +252,13 @@ const RecentUploads = () => {
                     {/* Product Image */}
                     <div className="relative w-full aspect-square overflow-hidden rounded-2xl bg-gray-800 dark:bg-gray-200">
                       {/* Loading Spinner */}
-                      {!imagesLoaded[item.id] && !imageErrors[item.id] && !loadingTimeout[item.id] && (
-                        <div className="absolute inset-0 flex items-center justify-center z-10 bg-gray-800 dark:bg-gray-200">
-                          <div className="w-8 h-8 border-2 border-purple-500 border-t-transparent rounded-full animate-spin" />
-                        </div>
-                      )}
+                      {!imagesLoaded[item.id] &&
+                        !imageErrors[item.id] &&
+                        !loadingTimeout[item.id] && (
+                          <div className="absolute inset-0 flex items-center justify-center z-10 bg-gray-800 dark:bg-gray-200">
+                            <div className="w-8 h-8 border-2 border-purple-500 border-t-transparent rounded-full animate-spin" />
+                          </div>
+                        )}
 
                       {/* Error Fallback */}
                       {imageErrors[item.id] && (
@@ -271,15 +272,17 @@ const RecentUploads = () => {
                       )}
 
                       {/* Timeout Fallback */}
-                      {loadingTimeout[item.id] && !imagesLoaded[item.id] && !imageErrors[item.id] && (
-                        <div className="absolute inset-0 flex items-center justify-center z-10 bg-gray-800 dark:bg-gray-200">
-                          <div className="text-center">
-                            <div className="text-gray-400 text-xs">
-                              Taking too long
+                      {loadingTimeout[item.id] &&
+                        !imagesLoaded[item.id] &&
+                        !imageErrors[item.id] && (
+                          <div className="absolute inset-0 flex items-center justify-center z-10 bg-gray-800 dark:bg-gray-200">
+                            <div className="text-center">
+                              <div className="text-gray-400 text-xs">
+                                Taking too long
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      )}
+                        )}
 
                       {/* Image */}
                       <img
@@ -296,19 +299,22 @@ const RecentUploads = () => {
                       />
 
                       {/* Discount Badge - Show if image loaded or timed out */}
-                      {(imagesLoaded[item.id] || loadingTimeout[item.id]) && !imageErrors[item.id] && (
-                        <div className="absolute top-3 left-3 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full z-20">
-                          -{calculateDiscount(item.price, item.originalPrice)}%
-                        </div>
-                      )}
+                      {(imagesLoaded[item.id] || loadingTimeout[item.id]) &&
+                        !imageErrors[item.id] && (
+                          <div className="absolute top-3 left-3 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full z-20">
+                            -{calculateDiscount(item.price, item.originalPrice)}
+                            %
+                          </div>
+                        )}
 
                       {/* Upload Time Badge - Show if image loaded or timed out */}
-                      {(imagesLoaded[item.id] || loadingTimeout[item.id]) && !imageErrors[item.id] && (
-                        <div className="absolute top-3 right-3 bg-black/70 backdrop-blur-sm text-white px-2 py-1 rounded-full text-xs font-bold flex items-center gap-1 z-20">
-                          <ClockIcon className="w-3 h-3" />
-                          <span>{item.uploadDate}</span>
-                        </div>
-                      )}
+                      {(imagesLoaded[item.id] || loadingTimeout[item.id]) &&
+                        !imageErrors[item.id] && (
+                          <div className="absolute top-3 right-3 bg-black/70 backdrop-blur-sm text-white px-2 py-1 rounded-full text-xs font-bold flex items-center gap-1 z-20">
+                            <ClockIcon className="w-3 h-3" />
+                            <span>{item.uploadDate}</span>
+                          </div>
+                        )}
 
                       {/* New Arrival Overlay for very recent items - Show if image loaded or timed out */}
                       {(imagesLoaded[item.id] || loadingTimeout[item.id]) &&

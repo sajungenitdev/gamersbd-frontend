@@ -7,17 +7,27 @@ import React, { useState, useEffect } from "react";
 const sliderImages = [
   {
     id: 1,
-    url: "https://images.launchbox-app.com/r2_5bf5ccb5-275f-4aa3-8678-cb4281061976.jpg",
+    url: "/images/slider/slider1.jpg",
     alt: "Gaming Console",
   },
   {
     id: 2,
-    url: "https://static0.gamerantimages.com/wordpress/wp-content/uploads/2021/06/call-of-duty-mobile-promo-banner.jpg",
+    url: "/images/slider/slider2.jpg",
     alt: "Gaming Accessories",
   },
   {
     id: 3,
-    url: "https://wdflat.com/wp-content/uploads/Battlefield-V.jpg",
+    url: "/images/slider/slider3.jpg",
+    alt: "VR Gaming",
+  },
+  {
+    id: 4,
+    url: "/images/slider/slider5.avif",
+    alt: "VR Gaming",
+  },
+  {
+    id: 5,
+    url: "/images/slider/slider6.webp",
     alt: "VR Gaming",
   },
 ];
@@ -26,8 +36,7 @@ const sliderImages = [
 const offers = [
   {
     id: 1,
-    image:
-      "https://gamersbd.com/wp-content/uploads/2022/05/ezgif.com-gif-maker.jpg",
+    image: "/images/slider/si1.jpg",
     imageBg: "bg-purple-100 dark:bg-purple-900/30",
     title: "Monthly Deals",
     description: "DualSense Controller",
@@ -39,7 +48,7 @@ const offers = [
   {
     id: 2,
     image:
-      "https://gamersbd.com/wp-content/uploads/2022/05/monthly-deals-design-templa.jpg",
+      "/images/slider/si2.jpg",
     imageBg: "bg-blue-100 dark:bg-blue-900/30",
     title: "Combo Offers",
     description: "7.1 Surround Sound",
@@ -51,7 +60,7 @@ const offers = [
   {
     id: 3,
     image:
-      "https://gamersbd.com/wp-content/uploads/2022/05/ccc2d0c2aedb4d4c1ef8a42a651.jpg",
+      "/images/slider/si3.jpg",
     imageBg: "bg-green-100 dark:bg-green-900/30",
     title: "Free Offers",
     description: "RGB Gaming",
@@ -62,7 +71,18 @@ const offers = [
   },
   {
     id: 4,
-    image: "https://gamersbd.com/wp-content/uploads/2022/05/maxresdefault.jpg",
+    image: "/images/slider/si4.jpg",
+    imageBg: "bg-orange-100 dark:bg-orange-900/30",
+    title: "Pre Orders",
+    description: "16000 DPI Sensor",
+    linkText: "Check Price",
+    linkUrl: "#",
+    bgColor: "bg-[#2a2a2a] dark:bg-white",
+    textColor: "text-gray-900 dark:text-white",
+  },
+  {
+    id: 5,
+    image: "/images/slider/si5.jpg",
     imageBg: "bg-orange-100 dark:bg-orange-900/30",
     title: "Pre Orders",
     description: "16000 DPI Sensor",
@@ -97,10 +117,10 @@ const HeroSection = () => {
   return (
     <div className="bg-[#1a1a1a] dark:bg-white">
       <div className="max-w-7xl mx-auto py-8 transition-colors duration-300">
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
           {/* Left Side - Slider (3/4 width) */}
-          <div className="lg:col-span-3 relative group">
-            <div className="relative h-[500px] rounded-2xl overflow-hidden shadow-2xl dark:shadow-gray-800/50">
+          <div className="lg:col-span-4 relative group">
+            <div className="relative h-[550px] rounded-2xl overflow-hidden shadow-2xl dark:shadow-gray-800/50">
               {/* Images */}
               {sliderImages.map((image, index) => (
                 <div
@@ -162,10 +182,11 @@ const HeroSection = () => {
                 key={offer.id}
                 className={`${offer.bgColor} ${offer.textColor} rounded-xl shadow-lg dark:shadow-gray-800/50 overflow-hidden hover:shadow-xl transition-all duration-300 group`}
               >
-                <div className="flex items-center p-4 bg-[#2a2a2a] dark:bg-gray-900/30">
+                {/* <div className="flex items-center p-4 bg-[#2a2a2a] dark:bg-gray-900/30"> */}
+                <div className="flex items-center p-0 ">
                   {/* Left side - Image/Icon */}
                   <div
-                    className={`flex-shrink-0 w-16 h-16 ${offer.imageBg} rounded-xl flex items-center justify-center text-4xl mr-4 group-hover:scale-110 transition-transform duration-300`}
+                    className={`flex-shrink-0 w-20 h-24 ${offer.imageBg} rounded-xl flex items-center justify-center text-4xl mr-4 group-hover:scale-110 transition-transform duration-300`}
                   >
                     <img
                       src={offer.image}
@@ -179,10 +200,10 @@ const HeroSection = () => {
                     <h3 className="text-lg font-bold truncate text-white font-lato">
                       {offer.title}
                     </h3>
-                    <p className="text-sm text-gray-400 dark:text-gray-400 mb-2 truncate">
+                    {/* <p className="text-sm text-gray-400 dark:text-gray-400 mb-2 truncate">
                       {offer.description}
-                    </p>
-                    <a
+                    </p> */}
+                    {/* <a
                       href={offer.linkUrl}
                       className="inline-flex items-center text-sm font-semibold text-[#d88616] dark:text-blue-400 hover:text-[#d88616] dark:hover:text-blue-300 transition-colors"
                     >
@@ -200,7 +221,7 @@ const HeroSection = () => {
                           d="M9 5l7 7-7 7"
                         />
                       </svg>
-                    </a>
+                    </a> */}
                   </div>
                 </div>
               </div>

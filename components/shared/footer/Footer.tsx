@@ -23,7 +23,7 @@ const Footer = () => {
       { label: "Order Tracking", href: "/track-order" },
     ],
     services: [
-      { label: "My Account", href: "/account" },
+      { label: "My Account", href: "/dashboard" },
       { label: "Login/Register", href: "/login" },
       { label: "My Orders", href: "/orders" },
       { label: "My Addresses", href: "/addresses" },

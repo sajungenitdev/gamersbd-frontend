@@ -188,7 +188,7 @@ const GamesAchivement = () => {
         {/* Header */}
         <div className="flex items-center justify-between mb-10">
           <div>
-            <h2 className="text-3xl md:text-4xl font-bold text-white dark:text-black">
+            <h2 className="text-3xl md:text-4xl text-white dark:text-black">
               Games with Achievements
             </h2>
             <p className="text-gray-400 dark:text-gray-600 mt-2">
