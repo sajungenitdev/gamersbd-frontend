@@ -44,7 +44,6 @@ export const categoryService = {
         }
 
         const data = await response.json();
-        console.log("Categories fetched successfully:", data);
 
         if (data.success && Array.isArray(data.data)) {
           return data.data; // Return exactly what API provides

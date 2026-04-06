@@ -6,6 +6,7 @@ import Footer from "../components/shared/footer/Footer";
 import { UserAuthProvider } from "./contexts/UserAuthContext";
 import { CartProvider } from "./contexts/CartContext";
 import { Toaster } from "react-hot-toast";
+import { CartDebug } from "../components/CartDebug";
 // One line to import and export metadata
 export { metadata } from "../components/metaData/metadata";
 
@@ -31,7 +32,10 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${lato.variable} ${inter.variable} antialiased`}>
+      <body
+        suppressHydrationWarning
+        className={`${lato.variable} ${inter.variable} antialiased`}
+      >
         <ThemeProvider>
           <UserAuthProvider>
             <CartProvider>

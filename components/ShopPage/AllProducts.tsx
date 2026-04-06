@@ -271,7 +271,7 @@ const CategoryTree = ({
   );
 };
 
-// Product Card Component
+// Product Card Component - Simplified version
 const ProductCard = React.memo(
   ({
     product,
@@ -311,23 +311,30 @@ const ProductCard = React.memo(
     const displayOriginalPrice =
       originalPrice > 1000 ? originalPrice / 100 : originalPrice;
 
-    const handleAddToCart = (e: React.MouseEvent) => {
-      e.preventDefault();
-      e.stopPropagation();
-      toast.success(`${product.name} added to cart!`);
+    // Prepare product data for AddToCartButton
+    const cartProduct = {
+      _id: product._id,
+      id: product._id,
+      name: product.name || "Product",
+      price: finalPrice,
+      discountPrice: finalPrice,
+      inStock: product.inStock,
+      image: imageUrl,
+      images: product.images,
+      slug: product.slug,
+      platform: product.platform?.[0] || "PS5",
     };
 
     const handleBuyNow = (e: React.MouseEvent) => {
       e.preventDefault();
       e.stopPropagation();
-      toast.success(`${product.name} added to cart!`);
-      setTimeout(() => {
-        window.location.href = "/checkout";
-      }, 500);
+      // Add to cart and redirect
+      window.location.href = `/checkout?product=${product._id}`;
     };
 
     return (
       <div className="relative group overflow-hidden rounded-2xl transition-all duration-300">
+        <p>{`/product/${product._id}`}</p>
         <Link href={`/product/${product._id}`}>
           {/* Image Container */}
           <div className="relative w-full aspect-square overflow-hidden rounded-2xl bg-gray-800 dark:bg-gray-200">
@@ -367,29 +374,18 @@ const ProductCard = React.memo(
               <h3 className="text-lg font-semibold text-white dark:text-black line-clamp-1">
                 {product.name || "Unnamed Product"}
               </h3>
-              <button
-                onClick={handleAddToCart}
-                className="p-1.5 rounded-full hover:bg-gray-800 dark:hover:bg-gray-200 transition-colors"
-                aria-label={`Add ${product.name} to cart`}
-                disabled={!product.inStock}
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="24"
-                  height="24"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  className="w-4 h-4 text-white dark:text-black"
-                >
-                  <circle cx="8" cy="21" r="1"></circle>
-                  <circle cx="19" cy="21" r="1"></circle>
-                  <path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"></path>
-                </svg>
-              </button>
+
+              {/* Add to Cart Button - Using your component */}
+              {product.inStock && (
+                <AddToCartButton
+                  product={cartProduct}
+                  quantity={1}
+                  variant="ghost"
+                  size="sm"
+                  showIcon={true}
+                  className="!w-auto !p-1.5 !rounded-full hover:bg-gray-800 dark:hover:bg-gray-200"
+                />
+              )}
             </div>
 
             {/* Price */}
@@ -409,7 +405,7 @@ const ProductCard = React.memo(
               )}
             </div>
 
-            {/* Buy Now Button - Full Width */}
+            {/* Buy Now Button */}
             {product.inStock ? (
               <button
                 onClick={handleBuyNow}

@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import {
   HelpCircle,
   Search,
@@ -8,169 +8,48 @@ import {
   Mail,
   Phone,
   Headphones,
-  FileText,
   BookOpen,
-  Video,
   Users,
   CreditCard,
   Truck,
   Package,
   RefreshCw,
   Shield,
-  Gift,
   Gamepad,
-  Globe,
   Clock,
-  CheckCircle,
-  AlertCircle,
   Sparkles,
   ArrowRight,
   ThumbsUp,
   ThumbsDown,
-  Copy,
-  Check,
-  ExternalLink,
   Facebook,
   Twitter,
   Instagram,
   Youtube,
-  MessageSquare,
 } from "lucide-react";
-
-// FAQ Categories
-const categories = [
-  { id: "all", name: "All Questions", icon: HelpCircle, count: 24 },
-  { id: "orders", name: "Orders & Shipping", icon: Package, count: 6 },
-  { id: "payment", name: "Payment & Billing", icon: CreditCard, count: 4 },
-  { id: "returns", name: "Returns & Refunds", icon: RefreshCw, count: 3 },
-  { id: "account", name: "Account Management", icon: Users, count: 4 },
-  { id: "games", name: "Games & Digital", icon: Gamepad, count: 4 },
-  { id: "technical", name: "Technical Support", icon: Headphones, count: 3 },
-];
-
-// FAQ Data
-const faqs = [
-  {
-    id: 1,
-    question: "How do I track my order?",
-    answer:
-      "You can track your order by logging into your account and visiting the 'Order History' section. Alternatively, use our Track Order page with your order number and email address. You'll receive real-time updates on your package location and estimated delivery time.",
-    category: "orders",
-    popular: true,
-    related: [2, 3, 5],
-  },
-  {
-    id: 2,
-    question: "What payment methods do you accept?",
-    answer:
-      "We accept all major credit cards (Visa, MasterCard, American Express), PayPal, Apple Pay, Google Pay, and various regional payment methods. All transactions are securely processed and encrypted.",
-    category: "payment",
-    popular: true,
-    related: [1, 4, 6],
-  },
-  {
-    id: 3,
-    question: "How long does shipping take?",
-    answer:
-      "Shipping times vary by location: Standard shipping (3-5 business days), Express shipping (1-2 business days), and International shipping (7-14 business days). Free standard shipping is available on orders over $50.",
-    category: "orders",
-    popular: true,
-    related: [1, 5, 8],
-  },
-  {
-    id: 4,
-    question: "What is your return policy?",
-    answer:
-      "We offer a 30-day return policy for most items. Products must be unused and in original packaging. Digital downloads and gift cards are non-refundable. Visit our Returns Center to initiate a return.",
-    category: "returns",
-    popular: true,
-    related: [2, 3, 7],
-  },
-  {
-    id: 5,
-    question: "How do I download purchased games?",
-    answer:
-      "After purchase, games appear in your Library. You can download them directly through our desktop app or website. Most games can be downloaded up to 5 times on different devices.",
-    category: "games",
-    popular: false,
-    related: [1, 8, 9],
-  },
-  {
-    id: 6,
-    question: "Can I change my order after placing it?",
-    answer:
-      "Orders can be modified within 1 hour of placement. Contact customer support immediately with your order number for changes to shipping address or items. After 1 hour, orders are processed and cannot be modified.",
-    category: "orders",
-    popular: false,
-    related: [1, 3, 7],
-  },
-  {
-    id: 7,
-    question: "How do I reset my password?",
-    answer:
-      "Click 'Forgot Password' on the login page and enter your email. You'll receive a reset link within minutes. For security, links expire after 24 hours. Contact support if you don't receive the email.",
-    category: "account",
-    popular: true,
-    related: [4, 6, 10],
-  },
-  {
-    id: 8,
-    question: "Do you offer gift cards?",
-    answer:
-      "Yes! Digital gift cards are available in denominations from $10 to $500. They're delivered via email within minutes and never expire. Physical gift cards are also available for purchase.",
-    category: "payment",
-    popular: false,
-    related: [2, 4, 9],
-  },
-  {
-    id: 9,
-    question: "What regions do you ship to?",
-    answer:
-      "We ship to over 50 countries worldwide. Enter your address at checkout to confirm availability. Some regions may have additional shipping fees or customs duties.",
-    category: "orders",
-    popular: false,
-    related: [1, 3, 5],
-  },
-  {
-    id: 10,
-    question: "How do I contact customer support?",
-    answer:
-      "Our support team is available 24/7 via live chat, email at support@gamechangers.com, or phone at +1 (800) 123-4567. Average response time is under 2 hours for email.",
-    category: "technical",
-    popular: true,
-    related: [2, 4, 7],
-  },
-  {
-    id: 11,
-    question: "Are my payment details secure?",
-    answer:
-      "Absolutely! We use 256-bit SSL encryption and are PCI-DSS compliant. Your payment information is never stored on our servers and is processed through certified payment gateways.",
-    category: "payment",
-    popular: true,
-    related: [2, 4, 6],
-  },
-  {
-    id: 12,
-    question: "Can I play games on multiple devices?",
-    answer:
-      "Yes! Your game library syncs across all devices. Download our app on Windows, Mac, iOS, and Android to access your games anywhere. Progress syncs automatically via cloud saves.",
-    category: "games",
-    popular: false,
-    related: [5, 8, 9],
-  },
-];
+import { faqService, FAQ, Category } from "../../services/faq.service";
 
 // FAQ Item Component
 const FAQItem = ({
   faq,
   isOpen,
   onToggle,
+  onHelpful,
 }: {
-  faq: any;
+  faq: FAQ;
   isOpen: boolean;
   onToggle: () => void;
+  onHelpful: (id: string, helpful: boolean) => Promise<void>;
 }) => {
   const [helpful, setHelpful] = useState<boolean | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+
+  const handleHelpful = async (value: boolean) => {
+    if (submitting) return;
+    setSubmitting(true);
+    setHelpful(value);
+    await onHelpful(faq._id, value);
+    setSubmitting(false);
+  };
 
   return (
     <div className="bg-[#2A2A2A] rounded-xl border border-gray-800 hover:border-purple-500/50 transition-all duration-300 overflow-hidden">
@@ -198,29 +77,28 @@ const FAQItem = ({
 
       <div
         className={`overflow-hidden transition-all duration-300 ${
-          isOpen ? "max-h-96 opacity-100" : "max-h-0 opacity-0"
+          isOpen ? "max-h-[500px] opacity-100" : "max-h-0 opacity-0"
         }`}
       >
         <div className="px-6 pb-4">
           <div className="border-t border-gray-800 pt-4">
-            <p className="text-gray-300 leading-relaxed mb-4">{faq.answer}</p>
+            <p className="text-gray-300 leading-relaxed mb-4 whitespace-pre-wrap">
+              {faq.answer}
+            </p>
 
             {/* Related Links */}
-            {faq.related && (
+            {faq.related && faq.related.length > 0 && (
               <div className="mb-4">
                 <p className="text-sm text-gray-400 mb-2">Related Questions:</p>
                 <div className="flex flex-wrap gap-2">
-                  {faq.related.map((id: number) => {
-                    const related = faqs.find((f) => f.id === id);
-                    return related ? (
-                      <button
-                        key={id}
-                        className="text-sm text-purple-400 hover:text-purple-300 underline decoration-purple-500/30 hover:decoration-purple-500 transition-all"
-                      >
-                        {related.question}
-                      </button>
-                    ) : null;
-                  })}
+                  {faq.related.map((related) => (
+                    <button
+                      key={related._id}
+                      className="text-sm text-purple-400 hover:text-purple-300 underline decoration-purple-500/30 hover:decoration-purple-500 transition-all"
+                    >
+                      {related.question}
+                    </button>
+                  ))}
                 </div>
               </div>
             )}
@@ -230,7 +108,8 @@ const FAQItem = ({
               <p className="text-sm text-gray-400">Was this helpful?</p>
               <div className="flex gap-2">
                 <button
-                  onClick={() => setHelpful(true)}
+                  onClick={() => handleHelpful(true)}
+                  disabled={submitting}
                   className={`p-2 rounded-lg transition-all ${
                     helpful === true
                       ? "bg-green-500/20 text-green-400"
@@ -240,7 +119,8 @@ const FAQItem = ({
                   <ThumbsUp className="w-4 h-4" />
                 </button>
                 <button
-                  onClick={() => setHelpful(false)}
+                  onClick={() => handleHelpful(false)}
+                  disabled={submitting}
                   className={`p-2 rounded-lg transition-all ${
                     helpful === false
                       ? "bg-red-500/20 text-red-400"
@@ -263,10 +143,12 @@ const CategoryCard = ({
   category,
   selected,
   onClick,
+  count,
 }: {
-  category: any;
+  category: { id: string; name: string; icon: any };
   selected: boolean;
   onClick: () => void;
+  count: number;
 }) => {
   const Icon = category.icon;
 
@@ -286,7 +168,7 @@ const CategoryCard = ({
           selected ? "bg-white/20 text-white" : "bg-[#1a1a1a] text-gray-500"
         }`}
       >
-        {category.count}
+        {count}
       </span>
     </button>
   );
@@ -349,8 +231,6 @@ const ContactCard = ({ icon: Icon, title, description, action, link }: any) => (
 // Quick Help Component
 const QuickHelp = () => (
   <div className="bg-gradient-to-br from-purple-600/20 via-indigo-600/20 to-purple-600/20 rounded-2xl p-8 border border-purple-500/30 relative overflow-hidden">
-    {/* <div className="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg width="60" height="60" viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg"%3E%3Cg fill="none" fill-rule="evenodd"%3E%3Cg fill="%239C92AC" fill-opacity="0.05"%3E%3Cpath d="M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z"/%3E%3C/g%3E%3C/g%3E%3C/svg%3E')] opacity-20"></div> */}
-
     <div className="relative z-10">
       <div className="flex items-center gap-2 mb-4">
         <MessageCircle className="w-6 h-6 text-purple-400" />
@@ -370,12 +250,12 @@ const QuickHelp = () => (
 // Popular Topics Component
 const PopularTopics = () => {
   const topics = [
-    { icon: Truck, label: "Shipping Info", count: 12 },
-    { icon: RefreshCw, label: "Returns", count: 8 },
-    { icon: CreditCard, label: "Payments", count: 15 },
-    { icon: Gamepad, label: "Digital Games", count: 10 },
-    { icon: Users, label: "Account", count: 7 },
-    { icon: Shield, label: "Security", count: 5 },
+    { icon: Truck, label: "Shipping Info" },
+    { icon: RefreshCw, label: "Returns" },
+    { icon: CreditCard, label: "Payments" },
+    { icon: Gamepad, label: "Digital Games" },
+    { icon: Users, label: "Account" },
+    { icon: Shield, label: "Security" },
   ];
 
   return (
@@ -403,32 +283,108 @@ const PopularTopics = () => {
 
 // Main Component
 const FAQPage = () => {
+  const [faqs, setFaqs] = useState<FAQ[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
-  const [openFaqs, setOpenFaqs] = useState<number[]>([]);
-  const [copied, setCopied] = useState(false);
+  const [openFaqs, setOpenFaqs] = useState<string[]>([]);
+  
+  const abortControllerRef = useRef<AbortController | null>(null);
+  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
 
-  const toggleFaq = (id: number) => {
+  const categoryConfig = [
+    { id: "all", name: "All Questions", icon: HelpCircle },
+    { id: "orders", name: "Orders & Shipping", icon: Package },
+    { id: "payment", name: "Payment & Billing", icon: CreditCard },
+    { id: "returns", name: "Returns & Refunds", icon: RefreshCw },
+    { id: "account", name: "Account Management", icon: Users },
+    { id: "games", name: "Games & Digital", icon: Gamepad },
+    { id: "technical", name: "Technical Support", icon: Headphones },
+  ];
+
+  const fetchFAQs = useCallback(async () => {
+    // Cancel previous request
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    
+    // Create new abort controller
+    const abortController = new AbortController();
+    abortControllerRef.current = abortController;
+
+    try {
+      setLoading(true);
+      const params: any = {};
+      if (selectedCategory !== "all") params.category = selectedCategory;
+      if (searchQuery) params.search = searchQuery;
+      
+      const { data, categories: catData } = await faqService.getAllFAQs(params, abortController.signal);
+      setFaqs(data);
+      setCategories(catData);
+    } catch (error: any) {
+      if (error.name === 'AbortError') {
+        // Silently ignore abort errors
+        return;
+      }
+      console.error("Error fetching FAQs:", error);
+    } finally {
+      setLoading(false);
+    }
+  }, [selectedCategory, searchQuery]);
+
+  // Debounced fetch
+  useEffect(() => {
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+    }
+    
+    debounceTimerRef.current = setTimeout(() => {
+      fetchFAQs();
+    }, 500);
+    
+    return () => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+    };
+  }, [fetchFAQs]);
+
+  const toggleFaq = (id: string) => {
     setOpenFaqs((prev) =>
-      prev.includes(id) ? prev.filter((faqId) => faqId !== id) : [...prev, id],
+      prev.includes(id) ? prev.filter((faqId) => faqId !== id) : [...prev, id]
     );
   };
 
-  // Filter FAQs
-  const filteredFaqs = faqs.filter((faq) => {
-    if (selectedCategory !== "all" && faq.category !== selectedCategory)
-      return false;
-    if (searchQuery) {
-      return (
-        faq.question.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        faq.answer.toLowerCase().includes(searchQuery.toLowerCase())
-      );
+  const handleHelpful = async (id: string, helpful: boolean) => {
+    try {
+      await faqService.markHelpful(id, helpful);
+    } catch (error) {
+      console.error("Error marking helpful:", error);
     }
-    return true;
-  });
+  };
 
-  // Get popular FAQs
+  const getCategoryCount = (categoryId: string) => {
+    if (categoryId === "all") return faqs.length;
+    const cat = categories.find((c) => c._id === categoryId);
+    return cat?.count || 0;
+  };
+
   const popularFaqs = faqs.filter((faq) => faq.popular);
+
+  if (loading && faqs.length === 0) {
+    return (
+      <div className="min-h-screen bg-[#1a1a1a] flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-12 h-12 border-4 border-purple-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-400">Loading FAQs...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#1a1a1a]">
@@ -458,7 +414,6 @@ const FAQPage = () => {
               and more.
             </p>
 
-            {/* Search Bar */}
             <div className="max-w-2xl mx-auto">
               <SearchBar onSearch={setSearchQuery} />
             </div>
@@ -478,12 +433,13 @@ const FAQPage = () => {
                   Categories
                 </h3>
                 <div className="space-y-2">
-                  {categories.map((category) => (
+                  {categoryConfig.map((category) => (
                     <CategoryCard
                       key={category.id}
                       category={category}
                       selected={selectedCategory === category.id}
                       onClick={() => setSelectedCategory(category.id)}
+                      count={getCategoryCount(category.id)}
                     />
                   ))}
                 </div>
@@ -520,8 +476,8 @@ const FAQPage = () => {
 
           {/* FAQ Content */}
           <div className="lg:col-span-3 space-y-8">
-            {/* Popular FAQs Section (shown when no search) */}
-            {!searchQuery && selectedCategory === "all" && (
+            {/* Popular FAQs Section */}
+            {!searchQuery && selectedCategory === "all" && popularFaqs.length > 0 && (
               <div className="bg-[#2A2A2A] rounded-2xl p-6 border border-gray-800">
                 <div className="flex items-center gap-2 mb-6">
                   <Sparkles className="w-5 h-5 text-purple-400" />
@@ -530,13 +486,13 @@ const FAQPage = () => {
                   </h2>
                 </div>
                 <div className="grid md:grid-cols-2 gap-4">
-                  {popularFaqs.map((faq) => (
+                  {popularFaqs.slice(0, 6).map((faq) => (
                     <button
-                      key={faq.id}
+                      key={faq._id}
                       onClick={() => {
-                        toggleFaq(faq.id);
+                        toggleFaq(faq._id);
                         document
-                          .getElementById(`faq-${faq.id}`)
+                          .getElementById(`faq-${faq._id}`)
                           ?.scrollIntoView({
                             behavior: "smooth",
                             block: "center",
@@ -555,13 +511,14 @@ const FAQPage = () => {
 
             {/* FAQ List */}
             <div className="space-y-4">
-              {filteredFaqs.length > 0 ? (
-                filteredFaqs.map((faq) => (
-                  <div key={faq.id} id={`faq-${faq.id}`}>
+              {faqs.length > 0 ? (
+                faqs.map((faq) => (
+                  <div key={faq._id} id={`faq-${faq._id}`}>
                     <FAQItem
                       faq={faq}
-                      isOpen={openFaqs.includes(faq.id)}
-                      onToggle={() => toggleFaq(faq.id)}
+                      isOpen={openFaqs.includes(faq._id)}
+                      onToggle={() => toggleFaq(faq._id)}
+                      onHelpful={handleHelpful}
                     />
                   </div>
                 ))
