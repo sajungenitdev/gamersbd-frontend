@@ -1,4 +1,4 @@
-// components/cart/AddToCartButton.tsx (Fixed version)
+// components/cart/AddToCartButton.tsx (FIXED VERSION)
 "use client";
 
 import React, { useState, useEffect } from "react";
@@ -38,7 +38,7 @@ const AddToCartButton: React.FC<AddToCartButtonProps> = ({
   onSuccess,
   onError,
 }) => {
-  const { addToCart, isAddingProduct, items } = useCart(); // Added items to debug
+  const { addToCart, isAddingProduct, items, refreshCart } = useCart(); // ← Added refreshCart here
   const [localAdding, setLocalAdding] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   
@@ -63,45 +63,45 @@ const AddToCartButton: React.FC<AddToCartButtonProps> = ({
   }, [showSuccess]);
 
   const handleAddToCart = async (e: React.MouseEvent) => {
-  e.preventDefault();
-  e.stopPropagation();
+    e.preventDefault();
+    e.stopPropagation();
 
-  console.log("🖱️ Add to cart clicked for:", product.name);
-  console.log("Product data:", product);
-  console.log("Product ID:", productId);
+    console.log("🖱️ Add to cart clicked for:", product.name);
+    console.log("Product data:", product);
+    console.log("Product ID:", productId);
 
-  if (isOutOfStock) {
-    toast.error(`${product.name} is out of stock!`);
-    return;
-  }
-
-  if (!productId) {
-    console.error("❌ Product ID is missing", product);
-    toast.error("Invalid product");
-    return;
-  }
-
-  setLocalAdding(true);
-
-  try {
-    const success = await addToCart(product, quantity);
-    console.log("Add to cart result:", success);
-    
-    if (success) {
-      setShowSuccess(true);
-      onSuccess?.();
-      // Force a refresh after 500ms
-      setTimeout(() => {
-        refreshCart();
-      }, 500);
+    if (isOutOfStock) {
+      toast.error(`${product.name} is out of stock!`);
+      return;
     }
-  } catch (error) {
-    console.error("❌ Failed to add to cart:", error);
-    onError?.(error as Error);
-  } finally {
-    setLocalAdding(false);
-  }
-};
+
+    if (!productId) {
+      console.error("❌ Product ID is missing", product);
+      toast.error("Invalid product");
+      return;
+    }
+
+    setLocalAdding(true);
+
+    try {
+      const success = await addToCart(product, quantity);
+      console.log("Add to cart result:", success);
+      
+      if (success) {
+        setShowSuccess(true);
+        onSuccess?.();
+        // Force a refresh after 500ms
+        setTimeout(() => {
+          refreshCart();
+        }, 500);
+      }
+    } catch (error) {
+      console.error("❌ Failed to add to cart:", error);
+      onError?.(error as Error);
+    } finally {
+      setLocalAdding(false);
+    }
+  };
 
   const sizeClasses = {
     sm: "px-3 py-1.5 text-sm rounded-md",
@@ -145,10 +145,10 @@ const AddToCartButton: React.FC<AddToCartButtonProps> = ({
           <span>Added!</span>
         </>
       ) : (
-        <div className="flex items-center">
+        <>
           {showIcon && <ShoppingCart className="w-5 h-5" />}
-          <span>{isOutOfStock ? "Out of Stock" : ""}</span>
-        </div>
+          <span>{isOutOfStock ? "Out of Stock" : "Add to Cart"}</span>
+        </>
       )}
     </button>
   );
