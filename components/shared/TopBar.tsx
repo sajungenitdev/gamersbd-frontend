@@ -1,4 +1,4 @@
-// components/TopBar.tsx (Enhanced version with drawer hover persistence)
+// components/TopBar.tsx
 "use client";
 import { User, Heart, ShoppingCart } from "lucide-react";
 import ThemeToggle from "./ThemeToggle";
@@ -6,11 +6,13 @@ import Link from "next/link";
 import { useState, useEffect, useRef } from "react";
 import { useUserAuth } from "../../app/contexts/UserAuthContext";
 import { useCart } from "../../app/contexts/CartContext";
+import { useWishlist } from "../../app/contexts/WishlistContext";
 import { CartDrawer } from "../Cart/CartDrawer";
 
 const TopBar = () => {
   const { user } = useUserAuth();
   const { totalItems, isLoading } = useCart();
+  const { wishlist, refreshWishlist } = useWishlist();
   const [cartCount, setCartCount] = useState(0);
   const [wishlistCount, setWishlistCount] = useState(0);
   const [isCartDrawerOpen, setIsCartDrawerOpen] = useState(false);
@@ -28,22 +30,36 @@ const TopBar = () => {
       .slice(0, 2);
   };
 
+  // Update cart count
   useEffect(() => {
     setCartCount(totalItems);
   }, [totalItems]);
 
+  // Update wishlist count
+  useEffect(() => {
+    if (wishlist) {
+      setWishlistCount(wishlist.totalItems || 0);
+    } else {
+      setWishlistCount(0);
+    }
+  }, [wishlist]);
+
+  // Refresh wishlist when user logs in
+  useEffect(() => {
+    if (user) {
+      refreshWishlist();
+    }
+  }, [user, refreshWishlist]);
+
   // Handle drawer visibility based on hover state
   useEffect(() => {
-    // Clear any pending close timer
     if (closeTimerRef.current) {
       clearTimeout(closeTimerRef.current);
     }
 
-    // Open drawer if hovering cart or drawer
     if (isHoveringCart || isHoveringDrawer) {
       setIsCartDrawerOpen(true);
     } else {
-      // Delay closing to prevent accidental closes
       closeTimerRef.current = setTimeout(() => {
         setIsCartDrawerOpen(false);
       }, 200);
@@ -57,7 +73,6 @@ const TopBar = () => {
   }, [isHoveringCart, isHoveringDrawer]);
 
   const handleCartClick = () => {
-    // Optional: toggle on click as well
     setIsCartDrawerOpen(!isCartDrawerOpen);
   };
 
@@ -108,7 +123,7 @@ const TopBar = () => {
             <Link href="/wishlist" className="flex items-center gap-1 pr-2 sm:pr-3 border-r border-gray-700 relative group">
               <Heart size={18} strokeWidth={1.5} className="text-gray-400 group-hover:text-[#e87831] transition-colors" />
               <span className="bg-red-600 text-white text-[10px] font-bold rounded-full h-4 w-4 flex items-center justify-center absolute -top-1 -right-1 me-2">
-                {wishlistCount}
+                {wishlistCount > 0 ? wishlistCount : 0}
               </span>
             </Link>
 
@@ -135,7 +150,7 @@ const TopBar = () => {
         </div>
       </div>
 
-      {/* Cart Drawer - Opens on Hover, stays open while hovering drawer */}
+      {/* Cart Drawer */}
       <div
         onMouseEnter={() => setIsHoveringDrawer(true)}
         onMouseLeave={() => setIsHoveringDrawer(false)}

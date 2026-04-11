@@ -99,7 +99,7 @@ const HeroSection = () => {
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
           {/* Left Side - Slider (3/4 width) */}
           <div className="lg:col-span-4 relative group">
-            <div className="relative h-[550px] rounded-2xl overflow-hidden shadow-2xl dark:shadow-gray-800/50">
+            <div className="relative h-[568px] rounded-2xl overflow-hidden shadow-2xl dark:shadow-gray-800/50">
               {/* Images */}
               {sliderImages.map((image, index) => (
                 <div
@@ -157,7 +157,7 @@ const HeroSection = () => {
             {offers.map((offer) => (
               <div
                 key={offer.id}
-                className="bg-white dark:bg-gray-800 rounded-xl dark:shadow-gray-800/50 overflow-hidden  dark:hover:shadow-gray-700/50 transition-all duration-300 group cursor-pointer"
+                className="bg-[#28282c] dark:bg-white rounded-xl dark:shadow-gray-800/50 overflow-hidden  dark:hover:shadow-gray-700/50 transition-all duration-300 group cursor-pointer"
               >
                 <div className="flex items-center ">
                   {/* Left side - Image/Icon */}
@@ -173,10 +173,10 @@ const HeroSection = () => {
 
                   {/* Right side - Text and Link */}
                   <div className="flex-1 min-w-0">
-                    <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider font-lato">
+                    <h3 className="text-xs font-semibold text-white dark:text-gray-600 uppercase tracking-wider font-lato">
                       {offer.title}
                     </h3>
-                    <p className="text-sm font-light text-gray-800 dark:text-white mt-1 truncate">
+                    <p className="text-sm font-light text-white dark:text-gray-400 mt-1 truncate">
                       {offer.description}
                     </p>
                   </div>

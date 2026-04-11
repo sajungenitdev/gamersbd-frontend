@@ -1,7 +1,7 @@
+// app/(dashboard)/wishlist/page.tsx
 "use client";
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
 import {
   Heart,
   Trash2,
@@ -12,14 +12,18 @@ import {
   Loader2,
   MoveRight,
   AlertCircle,
+  ChevronRight,
+  Home,
 } from 'lucide-react';
 import { useWishlist } from '../../contexts/WishlistContext';
 import { useCart } from '../../contexts/CartContext';
+import { useUserAuth } from '../../contexts/UserAuthContext';
 import { toast } from 'react-hot-toast';
 
 export default function page() {
-  const { wishlist, isLoading, removeFromWishlist, clearWishlist, moveToCart, updateSettings, getShareableLink } = useWishlist();
+  const { wishlist, isLoading, removeFromWishlist, clearWishlist, moveToCart, updateSettings, getShareableLink, refreshWishlist } = useWishlist();
   const { addToCart } = useCart();
+  const { user } = useUserAuth();
   const [isMoving, setIsMoving] = useState<string | null>(null);
   const [isRemoving, setIsRemoving] = useState<string | null>(null);
   const [showSettings, setShowSettings] = useState(false);
@@ -29,11 +33,28 @@ export default function page() {
   });
   const [isUpdating, setIsUpdating] = useState(false);
 
+  // Refresh wishlist when component mounts
+  useEffect(() => {
+    if (user) {
+      refreshWishlist();
+    }
+  }, [user, refreshWishlist]);
+
+  // Update settings when wishlist changes
+  useEffect(() => {
+    if (wishlist) {
+      setSettings({
+        name: wishlist.name || 'My Wishlist',
+        isPublic: wishlist.isPublic || false,
+      });
+    }
+  }, [wishlist]);
+
   const handleMoveToCart = async (itemId: string, product: any) => {
     setIsMoving(itemId);
     const success = await moveToCart(itemId, 1, product.platform?.[0]);
     setIsMoving(null);
-    
+
     if (success) {
       toast.success(`${product.name} moved to cart`);
     }
@@ -43,23 +64,27 @@ export default function page() {
     setIsRemoving(itemId);
     const success = await removeFromWishlist(itemId);
     setIsRemoving(null);
-    
+
     if (success) {
       toast.success(`${productName} removed from wishlist`);
     }
   };
 
   const handleClearAll = async () => {
-    if (confirm('Are you sure you want to clear your entire wishlist?')) {
+    if (confirm('Are you sure you want to clear your entire wishlist? This action cannot be undone.')) {
       await clearWishlist();
+      toast.success('Wishlist cleared');
     }
   };
 
   const handleUpdateSettings = async () => {
     setIsUpdating(true);
-    await updateSettings(settings.name, settings.isPublic);
+    const success = await updateSettings(settings.name, settings.isPublic);
     setIsUpdating(false);
-    setShowSettings(false);
+    if (success) {
+      setShowSettings(false);
+      toast.success('Wishlist settings updated');
+    }
   };
 
   const handleShare = async () => {
@@ -87,7 +112,7 @@ export default function page() {
 
   if (!wishlist || wishlist.items.length === 0) {
     return (
-      <div className="min-h-screen bg-[#1a1a1a] flex items-center justify-center px-4">
+      <div className="min-h-screen bg-[#1a1a1a] flex items-center justify-center">
         <div className="text-center max-w-md">
           <div className="w-24 h-24 bg-purple-500/20 rounded-full flex items-center justify-center mx-auto mb-6">
             <Heart className="w-12 h-12 text-purple-500" />
@@ -111,6 +136,20 @@ export default function page() {
   return (
     <div className="min-h-screen bg-[#1a1a1a] py-8 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto">
+        {/* Breadcrumb */}
+        <nav className="flex items-center gap-2 text-sm text-gray-400 mb-6">
+          <Link href="/" className="hover:text-purple-400 transition-colors flex items-center gap-1">
+            <Home className="w-4 h-4" />
+            Home
+          </Link>
+          <ChevronRight className="w-4 h-4" />
+          <Link href="/dashboard" className="hover:text-purple-400 transition-colors">
+            Dashboard
+          </Link>
+          <ChevronRight className="w-4 h-4" />
+          <span className="text-white">Wishlist</span>
+        </nav>
+
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
           <div>
@@ -147,11 +186,11 @@ export default function page() {
         </div>
 
         {/* Wishlist Items Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-6">
           {wishlist.items.map((item) => (
             <div
               key={item._id}
-              className="group bg-[#2A2A2A] rounded-xl overflow-hidden border border-gray-800 hover:border-purple-500/50 transition-all duration-300"
+              className="group rounded-xl overflow-hidden border border-gray-800 hover:border-orange-500/50 transition-all duration-300"
             >
               {/* Product Image */}
               <Link href={`/product/${item.product.slug || item.product._id}`} className="block relative aspect-square overflow-hidden bg-[#1f1f1f]">
@@ -160,13 +199,16 @@ export default function page() {
                   alt={item.product.name}
                   className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                 />
-                {item.product.discountPrice && (
+                {item.product.discountPrice && item.product.discountPrice < item.product.price && (
                   <div className="absolute top-2 left-2 px-2 py-1 bg-red-500 text-white text-xs font-bold rounded">
                     -{Math.round(((item.product.price - item.product.discountPrice) / item.product.price) * 100)}%
                   </div>
                 )}
                 <button
-                  onClick={() => handleRemove(item._id, item.product.name)}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    handleRemove(item._id, item.product.name);
+                  }}
                   disabled={isRemoving === item._id}
                   className="absolute top-2 right-2 p-2 bg-black/50 hover:bg-red-500 rounded-full transition-all opacity-0 group-hover:opacity-100 disabled:opacity-50"
                 >
@@ -185,16 +227,16 @@ export default function page() {
                     {item.product.name}
                   </h3>
                 </Link>
-                
+
                 {item.product.brand && (
                   <p className="text-sm text-gray-500 mb-2">{item.product.brand}</p>
                 )}
 
                 <div className="flex items-baseline gap-2 mb-3">
                   <span className="text-purple-400 font-bold text-xl">
-                    ${item.product.finalPrice.toFixed(2)}
+                    ${(item.product.finalPrice || item.product.price).toFixed(2)}
                   </span>
-                  {item.product.discountPrice && (
+                  {item.product.discountPrice && item.product.discountPrice < item.product.price && (
                     <span className="text-gray-500 text-sm line-through">
                       ${item.product.price.toFixed(2)}
                     </span>
@@ -285,14 +327,12 @@ export default function page() {
                   </div>
                   <button
                     onClick={() => setSettings({ ...settings, isPublic: !settings.isPublic })}
-                    className={`relative w-12 h-6 rounded-full transition ${
-                      settings.isPublic ? 'bg-purple-600' : 'bg-gray-700'
-                    }`}
+                    className={`relative w-12 h-6 rounded-full transition ${settings.isPublic ? 'bg-purple-600' : 'bg-gray-700'
+                      }`}
                   >
                     <div
-                      className={`absolute top-1 w-4 h-4 bg-white rounded-full transition ${
-                        settings.isPublic ? 'right-1' : 'left-1'
-                      }`}
+                      className={`absolute top-1 w-4 h-4 bg-white rounded-full transition ${settings.isPublic ? 'right-1' : 'left-1'
+                        }`}
                     />
                   </button>
                 </div>

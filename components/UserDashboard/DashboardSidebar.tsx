@@ -1,6 +1,6 @@
 // components/DashboardSidebar.tsx
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import Image from "next/image";
@@ -46,26 +46,35 @@ const DashboardSidebar = ({ user }: DashboardSidebarProps) => {
       label: "Dashboard",
       icon: LayoutDashboard,
       href: "/dashboard",
+      paths: ["/dashboard"],
     },
     {
       id: "profile",
       label: "My Profile",
       icon: User,
       href: "/dashboard/profile",
+      paths: ["/dashboard/profile", "/profile"],
     },
     {
       id: "orders",
       label: "My Orders",
       icon: ShoppingBag,
       href: "/dashboard/orders",
+      paths: ["/dashboard/orders", "/orders"],
     },
     {
       id: "wishlist",
       label: "Wishlist",
       icon: Heart,
       href: "/dashboard/wishlist",
+      paths: ["/dashboard/wishlist", "/wishlist"],
     },
   ];
+
+  // Check if a menu item is active
+  const isMenuItemActive = (item: typeof menuItems[0]) => {
+    return item.paths.includes(pathname) || pathname === item.href;
+  };
 
   const handleLogout = async () => {
     await logout();
@@ -110,8 +119,8 @@ const DashboardSidebar = ({ user }: DashboardSidebarProps) => {
       {/* Sidebar */}
       <div
         className={`
-          fixed lg:sticky top-0 left-0 h-screen w-72 bg-gradient-to-b from-[#161618] to-[#111113] 
-          border-r border-white/10 flex flex-col z-40 transition-transform duration-300
+          fixed lg:sticky top-0 left-0 rounded-xl h-screen w-72 my-3 bg-gradient-to-b from-[#161618] to-[#111113] 
+          flex flex-col z-40 transition-transform duration-300
           ${isMobileMenuOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}
         `}
       >
@@ -155,7 +164,7 @@ const DashboardSidebar = ({ user }: DashboardSidebarProps) => {
         <nav className="flex-1 overflow-y-auto py-6 px-4">
           <div className="space-y-1">
             {menuItems.map((item) => {
-              const isActive = pathname === item.href;
+              const isActive = isMenuItemActive(item);
               return (
                 <Link
                   key={item.id}
@@ -205,7 +214,7 @@ const DashboardSidebar = ({ user }: DashboardSidebarProps) => {
 
           {/* Version info */}
           <p className="text-xs text-gray-600 text-center mt-4">
-            Version 1.0.0 | © 2024 Gamers BD
+            Version 1.0.0 | © 2026 Gamers BD
           </p>
         </div>
       </div>

@@ -364,7 +364,7 @@ const ProductSlider = () => {
                 onClick={() => setCurrentIndex(idx)}
                 className={`w-2 h-2 rounded-full transition-all ${
                   currentIndex === idx
-                    ? "w-4 bg-blue-600 dark:bg-blue-500"
+                    ? "w-4 bg-orange-600 dark:bg-blue-500"
                     : "bg-gray-600 dark:bg-gray-400"
                 }`}
                 aria-label={`Go to slide ${idx + 1}`}

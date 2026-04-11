@@ -286,7 +286,7 @@ export default function Header() {
             {/* Left side - Logo and Categories dropdown */}
             <div className="navbar-start flex items-center gap-2">
               <button
-                className="btn btn-ghost lg:hidden text-gray-900 dark:text-white"
+                className="btn btn-ghost lg:hidden text-white dark:text-gray-900"
                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
                 aria-label="Toggle menu"
               >
@@ -325,8 +325,8 @@ export default function Header() {
                 onMouseLeave={handleMouseLeave}
               >
                 <button
-                  className={`btn btn-ghost flex items-center gap-2 text-gray-900 dark:text-white ${activeDropdown === "categories"
-                    ? "bg-gray-100 dark:bg-gray-800"
+                  className={`btn btn-ghost flex items-center gap-2 text-white dark:text-gray-900 ${activeDropdown === "categories"
+                    ? "bg-orange-600 dark:bg-gray-800"
                     : ""
                     }`}
                 >

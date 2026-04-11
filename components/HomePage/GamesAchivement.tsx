@@ -379,7 +379,7 @@ const GamesAchivement = () => {
         <div className="mt-8 flex justify-center">
           <div className="w-48 h-1 bg-gray-800 dark:bg-gray-200 rounded-full overflow-hidden">
             <div
-              className="h-full bg-blue-600 dark:bg-blue-500 rounded-full transition-all duration-300"
+              className="h-full bg-orange-600 dark:bg-blue-500 rounded-full transition-all duration-300"
               style={{
                 width: maxIndex > 0 ? `${(currentIndex / maxIndex) * 100}%` : "0%",
               }}

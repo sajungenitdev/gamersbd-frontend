@@ -96,7 +96,7 @@ const CategoriesDropdown = ({
           <Link
             href="/"
             onClick={handleLinkClick}
-            className="inline-flex items-center px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-lato font-medium rounded-lg transition-colors"
+            className="inline-flex items-center px-6 py-3 bg-orange-600 hover:bg-blue-700 text-white font-lato font-medium rounded-lg transition-colors"
           >
             Go to Homepage
           </Link>
@@ -137,7 +137,7 @@ const CategoriesDropdown = ({
                 onMouseEnter={() => onCategoryChange(category.name)}
                 className={`w-full text-left px-3 py-2.5 rounded-lg transition-all duration-200 group ${
                   activeCategoryTab === category.name
-                    ? "bg-blue-600 text-white"
+                    ? "bg-orange-600 text-white"
                     : "text-gray-300 dark:text-[#2a2a2a] hover:bg-[#333333] dark:hover:bg-gray-200"
                 }`}
               >
@@ -275,7 +275,7 @@ const CategoriesDropdown = ({
                   <Link
                     href={`/category/${createSlug(activeCategory.name)}`}
                     onClick={handleLinkClick}
-                    className="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors"
+                    className="inline-flex items-center px-4 py-2 bg-orange-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors"
                   >
                     Browse {activeCategory.name}
                   </Link>

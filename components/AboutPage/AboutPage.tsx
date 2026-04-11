@@ -247,7 +247,7 @@ const TeamMemberCard = ({ member, index }: { member: any; index: number }) => {
           <a href={member.social.twitter} className="w-10 h-10 bg-white/10 backdrop-blur-md rounded-full flex items-center justify-center hover:bg-blue-400 transition-all duration-300 border border-white/20">
             <Twitter className="w-4 h-4 text-white" />
           </a>
-          <a href={member.social.linkedin} className="w-10 h-10 bg-white/10 backdrop-blur-md rounded-full flex items-center justify-center hover:bg-blue-600 transition-all duration-300 border border-white/20">
+          <a href={member.social.linkedin} className="w-10 h-10 bg-white/10 backdrop-blur-md rounded-full flex items-center justify-center hover:bg-orange-600 transition-all duration-300 border border-white/20">
             <Linkedin className="w-4 h-4 text-white" />
           </a>
         </div>
