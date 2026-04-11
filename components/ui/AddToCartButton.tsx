@@ -41,7 +41,7 @@ const AddToCartButton: React.FC<AddToCartButtonProps> = ({
   const { addToCart, isAddingProduct, items, refreshCart } = useCart(); // ← Added refreshCart here
   const [localAdding, setLocalAdding] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
-  
+
   const productId = product._id || product.id;
   const isCurrentlyAdding = isAddingProduct(productId || '') || localAdding;
   const finalPrice = product.discountPrice || product.price;
@@ -86,7 +86,7 @@ const AddToCartButton: React.FC<AddToCartButtonProps> = ({
     try {
       const success = await addToCart(product, quantity);
       console.log("Add to cart result:", success);
-      
+
       if (success) {
         setShowSuccess(true);
         onSuccess?.();
@@ -104,9 +104,9 @@ const AddToCartButton: React.FC<AddToCartButtonProps> = ({
   };
 
   const sizeClasses = {
-    sm: "px-3 py-1.5 text-sm rounded-md",
-    md: "px-4 py-2 text-base rounded-lg",
-    lg: "px-6 py-3 text-lg rounded-xl",
+    sm: "text-sm rounded-md p-2",
+    md: "text-base rounded-lg p-2",
+    lg: "text-lg rounded-xl p-2",
   };
 
   const variantClasses = {
@@ -126,29 +126,22 @@ const AddToCartButton: React.FC<AddToCartButtonProps> = ({
       onClick={handleAddToCart}
       disabled={isOutOfStock || isLoading}
       className={`
-        w-full font-medium flex items-center justify-center gap-2
-        transition-all duration-300
-        ${sizeClasses[size]}
-        ${variantClasses[variant]}
-        ${!isOutOfStock && !isLoading ? "cursor-pointer active:scale-95" : "cursor-not-allowed opacity-70"}
-        ${className}
-      `}
+    w-full font-medium flex items-center justify-center gap-2
+    transition-all duration-300
+    ${sizeClasses[size]}
+    ${variantClasses[variant]}
+    ${!isOutOfStock && !isLoading ? "cursor-pointer active:scale-95" : "cursor-not-allowed opacity-70"}
+    ${className}
+  `}
     >
       {isLoading ? (
-        <>
-          <Loader2 className="w-5 h-5 animate-spin" />
-          <span>Adding...</span>
-        </>
+        <Loader2 className="w-5 h-5 animate-spin" />
       ) : showSuccess ? (
-        <>
-          <Check className="w-5 h-5" />
-          <span>Added!</span>
-        </>
+        <Check className="w-5 h-5" />
+      ) : isOutOfStock ? (
+        <span>Out of Stock</span>
       ) : (
-        <>
-          {showIcon && <ShoppingCart className="w-5 h-5" />}
-          <span>{isOutOfStock ? "Out of Stock" : "Add to Cart"}</span>
-        </>
+        showIcon && <ShoppingCart className="w-5 h-5" />
       )}
     </button>
   );

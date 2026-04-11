@@ -97,17 +97,15 @@ const ModernAccordion = ({
           )}
         </div>
         <div
-          className={`transform transition-all duration-300 ${
-            isOpen ? "rotate-180" : ""
-          }`}
+          className={`transform transition-all duration-300 ${isOpen ? "rotate-180" : ""
+            }`}
         >
           <ChevronDown className="w-4 h-4 text-gray-500 group-hover:text-purple-400" />
         </div>
       </button>
       <div
-        className={`overflow-hidden transition-all duration-300 ease-in-out ${
-          isOpen ? "max-h-full opacity-100 pb-4" : "max-h-0 opacity-0"
-        }`}
+        className={`overflow-hidden transition-all duration-300 ease-in-out ${isOpen ? "max-h-full opacity-100 pb-4" : "max-h-0 opacity-0"
+          }`}
       >
         {children}
       </div>
@@ -175,11 +173,10 @@ const CategoryTree = ({
     return (
       <div key={category._id} className="mb-1">
         <div
-          className={`flex items-center gap-2 rounded-lg transition-all duration-200 ${
-            isSelected
+          className={`flex items-center gap-2 rounded-lg transition-all duration-200 ${isSelected
               ? "bg-purple-600/10 border border-purple-500/30"
               : "hover:bg-gray-800/50"
-          }`}
+            }`}
           style={{ paddingLeft: `${paddingLeft}px` }}
         >
           {/* Expand/Collapse Button */}
@@ -210,11 +207,10 @@ const CategoryTree = ({
           {/* Category Label */}
           <label
             htmlFor={`cat-${category._id}`}
-            className={`flex-1 py-2 text-sm cursor-pointer transition-colors ${
-              isSelected
+            className={`flex-1 py-2 text-sm cursor-pointer transition-colors ${isSelected
                 ? "text-purple-400 font-medium"
                 : "text-gray-400 hover:text-white"
-            }`}
+              }`}
           >
             {category.name}
           </label>
@@ -252,11 +248,10 @@ const CategoryTree = ({
         />
         <label
           htmlFor="cat-all"
-          className={`flex-1 py-2 text-sm cursor-pointer transition-colors ${
-            selectedCategory === "All"
+          className={`flex-1 py-2 text-sm cursor-pointer transition-colors ${selectedCategory === "All"
               ? "text-purple-400 font-medium"
               : "text-gray-400 hover:text-white"
-          }`}
+            }`}
         >
           All Products
         </label>
@@ -334,7 +329,6 @@ const ProductCard = React.memo(
 
     return (
       <div className="relative group overflow-hidden rounded-2xl transition-all duration-300">
-        <p>{`/product/${product._id}`}</p>
         <Link href={`/product/${product._id}`}>
           {/* Image Container */}
           <div className="relative w-full aspect-square overflow-hidden rounded-2xl bg-gray-800 dark:bg-gray-200">
@@ -383,7 +377,7 @@ const ProductCard = React.memo(
                   variant="ghost"
                   size="sm"
                   showIcon={true}
-                  className="!w-auto !p-1.5 !rounded-full hover:bg-gray-800 dark:hover:bg-gray-200"
+                  className="!w-auto !rounded-full hover:bg-gray-800 dark:hover:bg-gray-200 flex items-center"
                 />
               )}
             </div>

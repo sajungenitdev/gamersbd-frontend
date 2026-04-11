@@ -3,7 +3,7 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 
-interface User {
+export interface User {
   _id: string;
   name: string;
   email: string;
@@ -13,6 +13,7 @@ interface User {
   phone?: string;
   bio?: string;
   avatar?: string;
+  gender?: string; // ✅ ADDED
   createdAt?: string | Date;
   updatedAt?: string | Date;
   emailVerified?: boolean;
@@ -67,6 +68,7 @@ interface AuthResponse {
     phone?: string;
     bio?: string;
     avatar?: string;
+    gender?: string;
     createdAt?: string;
     updatedAt?: string;
     address?: any;
@@ -265,7 +267,7 @@ export const UserAuthProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       }
 
       setToken(authToken);
-      setUser(userData);
+      setUser(userData as User);
 
       // Redirect to dashboard
       router.push('/dashboard');
@@ -324,7 +326,7 @@ export const UserAuthProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       return {
         success: data.success,
         message: data.message,
-        resetToken: data.resetToken, // Only in development
+        resetToken: data.resetToken,
       };
     } catch (error) {
       throw error;
@@ -351,7 +353,6 @@ export const UserAuthProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         throw new Error(data.message || 'Failed to reset password');
       }
 
-      // Success - password reset
       return;
     } catch (error) {
       throw error;
@@ -379,8 +380,8 @@ export const UserAuthProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       }
 
       // Update user state with new data
-      const updatedUser = { ...user, ...data.data };
-      setUser(updatedUser as User);
+      const updatedUser = { ...user, ...profileData, ...data.data } as User;
+      setUser(updatedUser);
 
       // Update storage
       if (localStorage.getItem('userData')) {
