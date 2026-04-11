@@ -255,7 +255,7 @@ const ProductDetails = () => {
 
     if (!token) {
       toast.error("Please login to add to wishlist");
-      router.push("/login");
+      router.push("/auth");
       return;
     }
 
