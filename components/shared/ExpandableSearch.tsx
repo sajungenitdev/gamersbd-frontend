@@ -47,7 +47,7 @@ const ExpandableSearch = () => {
     <>
       <button
         onClick={() => setIsOpen(true)}
-        className="flex h-10 w-10 items-center justify-center bg-transparent border border-[#2a2a2a] text-white rounded-lg hover:bg-[#2a2a2a] transition-all duration-200"
+        className="flex h-10 w-10 items-center justify-center bg-transparent border border-base-300 text-orange-600 dark:text-orange-600 hover:text-orange-600 rounded-lg hover:bg-base-200 dark:hover:bg-black transition-all duration-200"
         aria-label="Open search"
       >
         <Search className="h-5 w-5" />
@@ -55,14 +55,14 @@ const ExpandableSearch = () => {
 
       {isOpen && (
         <div
-          className="fixed inset-0 z-50 flex items-start justify-center bg-black/50 backdrop-blur-sm"
+          className="fixed inset-0 z-50 flex items-start justify-center bg-black/70 backdrop-blur-sm"
           onClick={() => {
             setIsOpen(false);
             setSearchQuery("");
           }}
         >
           <div
-            className="mt-20 w-full max-w-2xl mx-4 bg-base-100 rounded-lg shadow-2xl"
+            className="mt-20 w-full max-w-2xl mx-4 bg-base-100 rounded-lg shadow-2xl border border-base-300"
             onClick={(e) => e.stopPropagation()}
           >
             <form onSubmit={handleSearch} className="flex items-center">
@@ -72,7 +72,7 @@ const ExpandableSearch = () => {
                 placeholder="Search..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="flex-1 h-14 px-6 text-lg bg-transparent outline-none"
+                className="flex-1 h-14 px-6 text-lg bg-transparent outline-none text-base-content placeholder:text-base-content/50"
               />
               <button
                 type="button"
@@ -80,7 +80,7 @@ const ExpandableSearch = () => {
                   setIsOpen(false);
                   setSearchQuery("");
                 }}
-                className="h-14 w-14 flex items-center justify-center hover:bg-base-200"
+                className="h-14 w-14 flex items-center justify-center text-base-content/60 hover:text-base-content hover:bg-base-200 transition-colors"
               >
                 <X className="h-5 w-5" />
               </button>

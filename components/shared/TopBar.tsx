@@ -16,7 +16,7 @@ const TopBar = () => {
   const [isCartDrawerOpen, setIsCartDrawerOpen] = useState(false);
   const [isHoveringCart, setIsHoveringCart] = useState(false);
   const [isHoveringDrawer, setIsHoveringDrawer] = useState(false);
-  const closeTimerRef = useRef<NodeJS.Timeout| null>(null);
+  const closeTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   const getUserInitials = () => {
     if (!user?.name) return "U";
@@ -63,8 +63,8 @@ const TopBar = () => {
 
   return (
     <>
-      <div className="bg-[#2a2a2a] dark:bg-gray-100 text-gray-100 dark:text-gray-900 border-b border-gray-800 dark:border-gray-200 relative z-10">
-        <div className="max-w-7xl mx-auto py-2 px-4 sm:px-6 lg:px-8 flex flex-wrap items-center justify-between font-sans text-[13px] tracking-wide">
+      <div className="bg-[#2a2a2a] dark:bg-gray-100 text-gray-100 dark:text-gray-900 relative z-10">
+        <div className="max-w-7xl mx-auto py-2 flex flex-wrap items-center justify-between font-sans text-[13px] tracking-wide">
           <div className="flex items-center gap-3 sm:gap-4 flex-wrap font-lato">
             <Link href="/shop" className="hover:text-[#e87831] transition-colors uppercase font-medium">
               Store
@@ -107,22 +107,22 @@ const TopBar = () => {
 
             <Link href="/wishlist" className="flex items-center gap-1 pr-2 sm:pr-3 border-r border-gray-700 relative group">
               <Heart size={18} strokeWidth={1.5} className="text-gray-400 group-hover:text-[#e87831] transition-colors" />
-              <span className="bg-red-600 text-white text-[10px] font-bold rounded-full h-4 w-4 flex items-center justify-center absolute -top-1 -right-1">
+              <span className="bg-red-600 text-white text-[10px] font-bold rounded-full h-4 w-4 flex items-center justify-center absolute -top-1 -right-1 me-2">
                 {wishlistCount}
               </span>
             </Link>
 
             {/* Cart Button */}
-            <div 
+            <div
               onMouseEnter={() => setIsHoveringCart(true)}
               onMouseLeave={() => setIsHoveringCart(false)}
             >
-              <button 
+              <button
                 onClick={handleCartClick}
                 className="flex items-center gap-1 pr-2 sm:pr-3 border-r border-gray-700 relative group"
               >
                 <ShoppingCart size={18} strokeWidth={1.5} className="text-gray-400 group-hover:text-[#e87831] transition-colors" />
-                <span className="bg-red-600 text-white text-[10px] font-bold rounded-full h-4 w-4 flex items-center justify-center absolute -top-1 -right-1">
+                <span className="bg-red-600 text-white text-[10px] font-bold rounded-full h-4 w-4 flex items-center justify-center absolute -top-1 -right-1 me-2">
                   {isLoading ? "..." : cartCount}
                 </span>
               </button>
@@ -140,9 +140,9 @@ const TopBar = () => {
         onMouseEnter={() => setIsHoveringDrawer(true)}
         onMouseLeave={() => setIsHoveringDrawer(false)}
       >
-        <CartDrawer 
-          isOpen={isCartDrawerOpen} 
-          onClose={() => setIsCartDrawerOpen(false)} 
+        <CartDrawer
+          isOpen={isCartDrawerOpen}
+          onClose={() => setIsCartDrawerOpen(false)}
         />
       </div>
     </>

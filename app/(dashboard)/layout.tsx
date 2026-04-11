@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useUserAuth } from "../contexts/UserAuthContext";
 import DashboardSidebar from "../../components/UserDashboard/DashboardSidebar";
+import { useCartSync } from "../hook/useCartSync";
 
 export default function DashboardLayout({
   children,
@@ -12,7 +13,7 @@ export default function DashboardLayout({
 }) {
   const { user, isLoading } = useUserAuth();
   const router = useRouter();
-
+  useCartSync();
   useEffect(() => {
     if (!isLoading && !user) {
       router.push("/auth");

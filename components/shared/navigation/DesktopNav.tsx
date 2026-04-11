@@ -25,13 +25,12 @@ const NavLink = ({
       href={href}
       className={`relative font-normal font-lato transition-colors duration-300 cursor-pointer rounded-none
       focus:bg-transparent active:bg-transparent focus:outline-none
-      ${
-        active
-          ? "text-[#d88616] focus:text-[#d88616]"
-          : "text-white dark:text-gray-900 hover:text-[#d88616] focus:text-[#d88616]"
-      }
+      ${active
+          ? "text-orange-500 focus:text-orange-500"
+          : "text-white dark:text-gray-900 hover:text-orange-500 focus:text-orange-500"
+        }
       after:absolute after:left-0 after:-bottom-1 after:h-[2px] after:w-full
-      after:bg-gradient-to-r after:from-transparent after:via-[#d88616] after:to-transparent
+      after:bg-gradient-to-r after:from-transparent after:via-orange-500 after:to-transparent
       after:origin-center after:transition-transform after:duration-300
       ${active ? "after:scale-x-100" : "after:scale-x-0 hover:after:scale-x-100"}
       ${className}`}
@@ -73,9 +72,8 @@ const DesktopNav = ({
           <NavLink href={item.href} className="flex items-center">
             {item.label}
             <svg
-              className={`w-4 h-4 ml-1 transition-transform duration-200 ${
-                activeDropdown === item.id ? "rotate-180" : ""
-              }`}
+              className={`w-4 h-4 ml-1 transition-transform duration-200 ${activeDropdown === item.id ? "rotate-180" : ""
+                }`}
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"

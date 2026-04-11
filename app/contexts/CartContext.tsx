@@ -1,7 +1,6 @@
-// app/contexts/CartContext.tsx
 "use client";
 
-import React, { createContext, useContext, useEffect, useState, useCallback } from "react";
+import React, { createContext, useContext, useEffect, useState, useCallback, useRef } from "react";
 import axios from "axios";
 import { toast } from "react-hot-toast";
 
@@ -27,8 +26,12 @@ export interface CartContextType {
   updateQuantity: (itemId: string, quantity: number) => Promise<boolean>;
   removeFromCart: (itemId: string) => Promise<boolean>;
   clearCart: () => Promise<boolean>;
+  clearGuestCart: () => void;  // ✅ ADDED
   refreshCart: () => Promise<void>;
   isAddingProduct: (productId: string) => boolean;
+  syncGuestCartWithBackend: () => Promise<boolean>;
+  getCartTotal: () => number;  // ✅ ADDED
+  getCartCount: () => number;  // ✅ ADDED
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
@@ -46,13 +49,16 @@ interface CartProviderProps {
   baseUrl?: string;
 }
 
-export const CartProvider = ({ 
-  children, 
+export const CartProvider = ({
+  children,
   baseUrl = process.env.NEXT_PUBLIC_API_URL || "https://gamersbd-server.onrender.com"
 }: CartProviderProps) => {
   const [items, setItems] = useState<CartItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [addingItems, setAddingItems] = useState<Set<string>>(new Set()); // Track adding products
+  const [addingItems, setAddingItems] = useState<Set<string>>(new Set());
+
+  // Use ref to store fetchCart to avoid dependency issues
+  const fetchCartRef = useRef<(() => Promise<void>) | null>(null);
 
   // Helper to get auth token
   const getAuthToken = useCallback(() => {
@@ -72,11 +78,11 @@ export const CartProvider = ({
     if (!cartData || !cartData.items || !Array.isArray(cartData.items)) {
       return [];
     }
-    
+
     return cartData.items.map((item: any) => {
       const product = item.product || {};
       const price = product.discountPrice || product.price || 0;
-      
+
       return {
         id: item._id,
         productId: product._id || item.product,
@@ -110,12 +116,12 @@ export const CartProvider = ({
       setIsLoading(false);
       return;
     }
-    
+
     try {
       const response = await axios.get(`${baseUrl}/api/cart`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
-      
+
       if (response.data?.success && response.data?.cart) {
         const transformed = transformCartItems(response.data.cart);
         setItems(transformed);
@@ -130,6 +136,80 @@ export const CartProvider = ({
     }
   }, [baseUrl, getAuthToken, transformCartItems]);
 
+  // Store fetchCart in ref
+  useEffect(() => {
+    fetchCartRef.current = fetchCart;
+  }, [fetchCart]);
+
+  // ✅ IMPLEMENTED: Clear guest cart
+  const clearGuestCart = useCallback(() => {
+    setItems([]);
+    localStorage.removeItem('guest_cart');
+    localStorage.removeItem('cart');
+    console.log('Guest cart cleared');
+  }, []);
+
+  // Sync guest cart with backend after login
+  const syncGuestCartWithBackend = useCallback(async () => {
+    const token = getAuthToken();
+    if (!token) return false;
+
+    const guestCart = localStorage.getItem('guest_cart');
+    if (!guestCart) return false;
+
+    try {
+      const guestItems = JSON.parse(guestCart);
+      if (guestItems.length === 0) return false;
+
+      setIsLoading(true);
+
+      // Sync each item individually to the backend
+      let syncSuccess = true;
+      for (const item of guestItems) {
+        try {
+          const response = await axios.post(
+            `${baseUrl}/api/cart/add`,
+            { 
+              productId: item.productId, 
+              quantity: item.quantity,
+              platform: item.platform || "PS5" 
+            },
+            { headers: { 'Authorization': `Bearer ${token}` } }
+          );
+
+          if (!response.data?.success) {
+            syncSuccess = false;
+          }
+        } catch (error) {
+          console.error("Failed to sync item:", item, error);
+          syncSuccess = false;
+        }
+      }
+
+      // Clear guest cart after sync attempt
+      clearGuestCart();
+
+      // Refresh cart from backend
+      if (fetchCartRef.current) {
+        await fetchCartRef.current();
+      }
+
+      if (syncSuccess) {
+        toast.success('Cart synced successfully!');
+      } else {
+        toast.success('Cart synced with some items');
+      }
+      
+      return syncSuccess;
+    } catch (error) {
+      console.error("Failed to sync cart:", error);
+      toast.error('Failed to sync cart');
+      return false;
+    } finally {
+      setIsLoading(false);
+    }
+  }, [baseUrl, getAuthToken, clearGuestCart]);
+
   // Save guest cart to localStorage
   const saveGuestCart = useCallback((cartItems: CartItem[]) => {
     localStorage.setItem('guest_cart', JSON.stringify(cartItems));
@@ -143,9 +223,8 @@ export const CartProvider = ({
       return false;
     }
 
-    // Mark as adding
     setAddingItems(prev => new Set(prev).add(productId));
-    
+
     try {
       if (!isLoggedIn()) {
         // Guest mode
@@ -163,7 +242,7 @@ export const CartProvider = ({
         setItems(prevItems => {
           const existingIndex = prevItems.findIndex(item => item.productId === productId);
           let updatedItems;
-          
+
           if (existingIndex >= 0) {
             updatedItems = [...prevItems];
             updatedItems[existingIndex] = {
@@ -173,15 +252,15 @@ export const CartProvider = ({
           } else {
             updatedItems = [...prevItems, newItem];
           }
-          
+
           saveGuestCart(updatedItems);
           return updatedItems;
         });
-        
+
         toast.success(`${product.name} added to cart!`);
         return true;
       }
-      
+
       // Auth mode
       const token = getAuthToken();
       const response = await axios.post(
@@ -189,7 +268,7 @@ export const CartProvider = ({
         { productId, quantity, platform: product.platform || "PS5" },
         { headers: { 'Authorization': `Bearer ${token}` } }
       );
-      
+
       if (response.data?.success && response.data?.cart) {
         const transformed = transformCartItems(response.data.cart);
         setItems(transformed);
@@ -203,7 +282,6 @@ export const CartProvider = ({
       toast.error(error.response?.data?.message || "Failed to add to cart");
       return false;
     } finally {
-      // Remove from adding set
       setAddingItems(prev => {
         const next = new Set(prev);
         next.delete(productId);
@@ -222,7 +300,7 @@ export const CartProvider = ({
     if (quantity < 1) {
       return removeFromCart(itemId);
     }
-    
+
     try {
       if (!isLoggedIn()) {
         setItems(prevItems => {
@@ -234,14 +312,14 @@ export const CartProvider = ({
         });
         return true;
       }
-      
+
       const token = getAuthToken();
       const response = await axios.put(
         `${baseUrl}/api/cart/update/${itemId}`,
         { quantity },
         { headers: { 'Authorization': `Bearer ${token}` } }
       );
-      
+
       if (response.data?.success && response.data?.cart) {
         const transformed = transformCartItems(response.data.cart);
         setItems(transformed);
@@ -267,13 +345,13 @@ export const CartProvider = ({
         toast.success("Item removed");
         return true;
       }
-      
+
       const token = getAuthToken();
       const response = await axios.delete(
         `${baseUrl}/api/cart/remove/${itemId}`,
         { headers: { 'Authorization': `Bearer ${token}` } }
       );
-      
+
       if (response.data?.success && response.data?.cart) {
         const transformed = transformCartItems(response.data.cart);
         setItems(transformed);
@@ -297,12 +375,12 @@ export const CartProvider = ({
         toast.success("Cart cleared");
         return true;
       }
-      
+
       const token = getAuthToken();
       await axios.delete(`${baseUrl}/api/cart/clear`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
-      
+
       setItems([]);
       toast.success("Cart cleared");
       return true;
@@ -317,6 +395,16 @@ export const CartProvider = ({
   const refreshCart = useCallback(async () => {
     await fetchCart();
   }, [fetchCart]);
+
+  // ✅ ADDED: Get cart total
+  const getCartTotal = useCallback(() => {
+    return items.reduce((total, item) => total + (item.price * item.quantity), 0);
+  }, [items]);
+
+  // ✅ ADDED: Get cart count
+  const getCartCount = useCallback(() => {
+    return items.reduce((count, item) => count + item.quantity, 0);
+  }, [items]);
 
   // Load cart on mount
   useEffect(() => {
@@ -337,8 +425,12 @@ export const CartProvider = ({
       updateQuantity,
       removeFromCart,
       clearCart,
+      clearGuestCart,  // ✅ EXPORTED
       refreshCart,
-      isAddingProduct, // Now this is properly defined
+      isAddingProduct,
+      syncGuestCartWithBackend,
+      getCartTotal,    // ✅ EXPORTED
+      getCartCount,    // ✅ EXPORTED
     }}>
       {children}
     </CartContext.Provider>

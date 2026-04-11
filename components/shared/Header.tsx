@@ -21,10 +21,40 @@ export default function Header() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isSticky, setIsSticky] = useState(false);
+  const [isDarkMode, setIsDarkMode] = useState(false); // Add state for dark mode
   const dropdownTimerRef = useRef<NodeJS.Timeout | null>(null);
   const headerRef = useRef<HTMLDivElement>(null);
   const mainHeaderRef = useRef<HTMLDivElement>(null);
   const topBarRef = useRef<HTMLDivElement>(null);
+
+  // Check and watch for theme changes
+  useEffect(() => {
+    const checkTheme = () => {
+      // Check for data-theme attribute (daisyui) or dark class (Tailwind)
+      const isDark =
+        document.documentElement.getAttribute('data-theme') === 'dark' ||
+        document.documentElement.classList.contains('dark');
+      setIsDarkMode(isDark);
+    };
+
+    // Initial check
+    checkTheme();
+
+    // Listen for theme changes
+    const observer = new MutationObserver((mutations) => {
+      mutations.forEach((mutation) => {
+        if (mutation.attributeName === 'data-theme' || mutation.attributeName === 'class') {
+          checkTheme();
+        }
+      });
+    });
+
+    observer.observe(document.documentElement, {
+      attributes: true
+    });
+
+    return () => observer.disconnect();
+  }, []);
 
   // Fetch categories on component mount
   useEffect(() => {
@@ -242,11 +272,10 @@ export default function Header() {
       {/* Main Header - Sticky */}
       <div
         ref={mainHeaderRef}
-        className={`bg-[#1a1a1a] dark:bg-white shadow-sm transition-all duration-300 border-b border-[#2a2a2a] ${
-          isSticky
-            ? "fixed top-0 left-0 right-0 z-[60] animate-slideDown"
-            : "relative"
-        }`}
+        className={`bg-[#191919] dark:bg-white shadow-sm transition-all duration-300 border-b border-gray-800 dark:border-gray-200 ${isSticky
+          ? "fixed top-0 left-0 right-0 z-[60] animate-slideDown"
+          : "relative"
+          }`}
         style={{
           zIndex: isSticky ? 60 : 50,
           transform: isSticky ? "translateY(0)" : "none",
@@ -257,7 +286,7 @@ export default function Header() {
             {/* Left side - Logo and Categories dropdown */}
             <div className="navbar-start flex items-center gap-2">
               <button
-                className="btn btn-ghost lg:hidden text-white dark:text-gray-900"
+                className="btn btn-ghost lg:hidden text-gray-900 dark:text-white"
                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
                 aria-label="Toggle menu"
               >
@@ -277,9 +306,10 @@ export default function Header() {
                 </svg>
               </button>
 
-              <Link href="/" className="btn btn-ghost px-0">
+              {/* Dynamic Logo based on theme */}
+              <Link href="/" className="p-0 pt-2 flex items-center">
                 <Image
-                  src="/images/GamersBD-logo.png"
+                  src={isDarkMode ? "/images/logo-black.png" : "/images/logo-white.png"}
                   alt="Gamersbd"
                   width={isSticky ? 160 : 180}
                   height={isSticky ? 45 : 50}
@@ -295,11 +325,10 @@ export default function Header() {
                 onMouseLeave={handleMouseLeave}
               >
                 <button
-                  className={`btn btn-ghost flex items-center gap-2 text-white dark:text-gray-900 ${
-                    activeDropdown === "categories"
-                      ? "bg-[#2a2a2a] dark:bg-gray-100"
-                      : ""
-                  }`}
+                  className={`btn btn-ghost flex items-center gap-2 text-gray-900 dark:text-white ${activeDropdown === "categories"
+                    ? "bg-gray-100 dark:bg-gray-800"
+                    : ""
+                    }`}
                 >
                   <svg
                     className="w-5 h-5"
@@ -316,9 +345,8 @@ export default function Header() {
                   </svg>
                   <span className="font-medium font-lato">CATEGORIES</span>
                   <svg
-                    className={`w-4 h-4 transition-transform duration-200 ${
-                      activeDropdown === "categories" ? "rotate-180" : ""
-                    }`}
+                    className={`w-4 h-4 transition-transform duration-200 ${activeDropdown === "categories" ? "rotate-180" : ""
+                      }`}
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -358,59 +386,58 @@ export default function Header() {
 
       {/* Spacer to prevent content jump when header becomes sticky - Only visible when sticky */}
       {isSticky && (
-        <div className="h-[73px] w-full bg-[#1a1a1a] dark:bg-white" />
+        <div className="h-[73px] w-full bg-[#191919] dark:bg-white" />
       )}
 
       {/* Dropdown Container - Fixed positioning when sticky */}
       {(activeDropdown === "categories" ||
         activeDropdown === "specialized" ||
         activeDropdown === "offers") && (
-        <div
-          className={`left-0 right-0 transition-all duration-300 ${
-            isSticky ? "fixed z-[61]" : "absolute z-[100]"
-          }`}
-          style={{
-            top: isSticky ? "73px" : "100%",
-          }}
-        >
-          {activeDropdown === "categories" && !loading && (
-            <CategoriesDropdown
-              categories={categories}
-              activeCategoryTab={activeCategoryTab}
-              onCategoryChange={setActiveCategoryTab}
-              onMouseEnter={() => handleMouseEnter("categories")}
-              onMouseLeave={handleMouseLeave}
-              onCloseDropdown={closeAllDropdowns} // Add this prop
-              isSticky={isSticky}
-            />
-          )}
+          <div
+            className={`left-0 right-0 transition-all duration-300 ${isSticky ? "fixed z-[61]" : "absolute z-[100]"
+              }`}
+            style={{
+              top: isSticky ? "73px" : "100%",
+            }}
+          >
+            {activeDropdown === "categories" && !loading && (
+              <CategoriesDropdown
+                categories={categories}
+                activeCategoryTab={activeCategoryTab}
+                onCategoryChange={setActiveCategoryTab}
+                onMouseEnter={() => handleMouseEnter("categories")}
+                onMouseLeave={handleMouseLeave}
+                onCloseDropdown={closeAllDropdowns}
+                isSticky={isSticky}
+              />
+            )}
 
-          {activeDropdown === "specialized" && (
-            <SpecializedDropdown
-              items={specialized}
-              onMouseEnter={() => handleMouseEnter("specialized")}
-              onMouseLeave={handleMouseLeave}
-              isSticky={isSticky}
-            />
-          )}
+            {activeDropdown === "specialized" && (
+              <SpecializedDropdown
+                items={specialized}
+                onMouseEnter={() => handleMouseEnter("specialized")}
+                onMouseLeave={handleMouseLeave}
+                isSticky={isSticky}
+              />
+            )}
 
-          {activeDropdown === "offers" && (
-            <OffersDropdown
-              items={offers}
-              onMouseEnter={() => handleMouseEnter("offers")}
-              onMouseLeave={handleMouseLeave}
-              isSticky={isSticky}
-            />
-          )}
-        </div>
-      )}
+            {activeDropdown === "offers" && (
+              <OffersDropdown
+                items={offers}
+                onMouseEnter={() => handleMouseEnter("offers")}
+                onMouseLeave={handleMouseLeave}
+                isSticky={isSticky}
+              />
+            )}
+          </div>
+        )}
 
       <MobileMenu
         isOpen={isMobileMenuOpen}
         categories={categories}
         specialized={specialized}
         offers={offers}
-        onClose={() => setIsMobileMenuOpen(false)} // Add close handler
+        onClose={() => setIsMobileMenuOpen(false)}
       />
 
       {/* Add custom animation styles */}

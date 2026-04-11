@@ -42,32 +42,24 @@ const offers = [
     description: "DualSense Controller",
     linkText: "Shop Now",
     linkUrl: "#",
-    bgColor: "bg-[#2a2a2a] dark:bg-white",
-    textColor: "text-gray-900 dark:text-white",
   },
   {
     id: 2,
-    image:
-      "/images/slider/si2.jpg",
+    image: "/images/slider/si2.jpg",
     imageBg: "bg-blue-100 dark:bg-blue-900/30",
     title: "Combo Offers",
     description: "7.1 Surround Sound",
     linkText: "View Deals",
     linkUrl: "#",
-    bgColor: "bg-[#2a2a2a] dark:bg-white",
-    textColor: "text-gray-900 dark:text-white",
   },
   {
     id: 3,
-    image:
-      "/images/slider/si3.jpg",
+    image: "/images/slider/si3.jpg",
     imageBg: "bg-green-100 dark:bg-green-900/30",
     title: "Free Offers",
     description: "RGB Gaming",
     linkText: "Learn More",
     linkUrl: "#",
-    bgColor: "bg-[#2a2a2a] dark:bg-white",
-    textColor: "text-gray-900 dark:text-white",
   },
   {
     id: 4,
@@ -77,20 +69,7 @@ const offers = [
     description: "16000 DPI Sensor",
     linkText: "Check Price",
     linkUrl: "#",
-    bgColor: "bg-[#2a2a2a] dark:bg-white",
-    textColor: "text-gray-900 dark:text-white",
-  },
-  {
-    id: 5,
-    image: "/images/slider/si5.jpg",
-    imageBg: "bg-orange-100 dark:bg-orange-900/30",
-    title: "Pre Orders",
-    description: "16000 DPI Sensor",
-    linkText: "Check Price",
-    linkUrl: "#",
-    bgColor: "bg-[#2a2a2a] dark:bg-white",
-    textColor: "text-gray-900 dark:text-white",
-  },
+  }
 ];
 
 const HeroSection = () => {
@@ -115,7 +94,7 @@ const HeroSection = () => {
   };
 
   return (
-    <div className="bg-[#1a1a1a] dark:bg-white">
+    <div className="bg-[#191919] dark:bg-white">
       <div className="max-w-7xl mx-auto py-8 transition-colors duration-300">
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
           {/* Left Side - Slider (3/4 width) */}
@@ -125,11 +104,10 @@ const HeroSection = () => {
               {sliderImages.map((image, index) => (
                 <div
                   key={image.id}
-                  className={`absolute inset-0 transition-transform duration-700 ease-in-out ${
-                    index === currentSlide
-                      ? "translate-x-0"
-                      : "translate-x-full"
-                  }`}
+                  className={`absolute inset-0 transition-transform duration-700 ease-in-out ${index === currentSlide
+                    ? "translate-x-0"
+                    : "translate-x-full"
+                    }`}
                   style={{
                     transform: `translateX(${(index - currentSlide) * 100}%)`,
                   }}
@@ -147,13 +125,13 @@ const HeroSection = () => {
               {/* Navigation Arrows */}
               <button
                 onClick={prevSlide}
-                className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-full flex items-center justify-center text-gray-800 dark:text-gray-200 hover:bg-white dark:hover:bg-gray-700 transition-all opacity-0 group-hover:opacity-100"
+                className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-full flex items-center justify-center text-gray-800 dark:text-gray-200 hover:bg-white dark:hover:bg-gray-700 hover:scale-110 transition-all opacity-0 group-hover:opacity-100"
               >
                 <ChevronLeftIcon className="w-6 h-6" />
               </button>
               <button
                 onClick={nextSlide}
-                className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-full flex items-center justify-center text-gray-800 dark:text-gray-200 hover:bg-white dark:hover:bg-gray-700 transition-all opacity-0 group-hover:opacity-100"
+                className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-full flex items-center justify-center text-gray-800 dark:text-gray-200 hover:bg-white dark:hover:bg-gray-700 hover:scale-110 transition-all opacity-0 group-hover:opacity-100"
               >
                 <ChevronRightIcon className="w-6 h-6" />
               </button>
@@ -164,11 +142,10 @@ const HeroSection = () => {
                   <button
                     key={index}
                     onClick={() => setCurrentSlide(index)}
-                    className={`transition-all ${
-                      index === currentSlide
-                        ? "w-8 bg-white dark:bg-blue-400"
-                        : "w-2 bg-white/50 dark:bg-gray-400/50 hover:bg-white/80 dark:hover:bg-gray-300/80"
-                    } h-2 rounded-full`}
+                    className={`transition-all ${index === currentSlide
+                      ? "w-8 bg-orange-500"
+                      : "w-2 bg-white/50 dark:bg-gray-400/50 hover:bg-orange-500/50 dark:hover:bg-orange-500/50"
+                      } h-2 rounded-full`}
                   />
                 ))}
               </div>
@@ -180,48 +157,28 @@ const HeroSection = () => {
             {offers.map((offer) => (
               <div
                 key={offer.id}
-                className={`${offer.bgColor} ${offer.textColor} rounded-xl shadow-lg dark:shadow-gray-800/50 overflow-hidden hover:shadow-xl transition-all duration-300 group`}
+                className="bg-white dark:bg-gray-800 rounded-xl dark:shadow-gray-800/50 overflow-hidden  dark:hover:shadow-gray-700/50 transition-all duration-300 group cursor-pointer"
               >
-                {/* <div className="flex items-center p-4 bg-[#2a2a2a] dark:bg-gray-900/30"> */}
-                <div className="flex items-center p-0 ">
+                <div className="flex items-center ">
                   {/* Left side - Image/Icon */}
                   <div
-                    className={`flex-shrink-0 w-20 h-24 ${offer.imageBg} rounded-xl flex items-center justify-center text-4xl mr-4 group-hover:scale-110 transition-transform duration-300`}
+                    className={`flex-shrink-0 w-24 h-[130px] ${offer.imageBg} rounded-[8px] flex items-center justify-center mr-4 group-hover:scale-110 transition-transform duration-300 overflow-hidden`}
                   >
                     <img
                       src={offer.image}
                       alt={offer.title}
-                      className="w-full h-full rounded-xl object-cover"
+                      className="w-full h-full rounded-[8px] object-cover"
                     />
                   </div>
 
                   {/* Right side - Text and Link */}
                   <div className="flex-1 min-w-0">
-                    <h3 className="text-lg font-bold truncate text-white font-lato">
+                    <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider font-lato">
                       {offer.title}
                     </h3>
-                    {/* <p className="text-sm text-gray-400 dark:text-gray-400 mb-2 truncate">
+                    <p className="text-sm font-light text-gray-800 dark:text-white mt-1 truncate">
                       {offer.description}
-                    </p> */}
-                    {/* <a
-                      href={offer.linkUrl}
-                      className="inline-flex items-center text-sm font-semibold text-[#d88616] dark:text-blue-400 hover:text-[#d88616] dark:hover:text-blue-300 transition-colors"
-                    >
-                      {offer.linkText}
-                      <svg
-                        className="w-4 h-4 ml-1 group-hover:translate-x-1 transition-transform"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M9 5l7 7-7 7"
-                        />
-                      </svg>
-                    </a> */}
+                    </p>
                   </div>
                 </div>
               </div>
