@@ -263,11 +263,18 @@ const ProductDetails = () => {
 
     try {
       if (isWishlisted) {
-        await axios.delete(`${API_URL}/api/wishlist/remove/${product?._id}`, {
+        // Need to get the itemId first
+        const checkResponse = await axios.get(`${API_URL}/api/wishlist/check/${product?._id}`, {
           headers: { Authorization: `Bearer ${token}` },
         });
-        setIsWishlisted(false);
-        toast.success("Removed from wishlist");
+
+        if (checkResponse.data.inWishlist && checkResponse.data.itemId) {
+          await axios.delete(`${API_URL}/api/wishlist/remove/${checkResponse.data.itemId}`, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          setIsWishlisted(false);
+          toast.success("Removed from wishlist");
+        }
       } else {
         await axios.post(
           `${API_URL}/api/wishlist/add`,
