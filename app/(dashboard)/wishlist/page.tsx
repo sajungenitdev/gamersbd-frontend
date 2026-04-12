@@ -1,4 +1,4 @@
-// app/(dashboard)/wishlist/page.tsx
+// app/dashboard/wishlist/page.tsx
 "use client";
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
@@ -15,12 +15,12 @@ import {
   ChevronRight,
   Home,
 } from 'lucide-react';
+import { toast } from 'react-hot-toast';
 import { useWishlist } from '../../contexts/WishlistContext';
 import { useCart } from '../../contexts/CartContext';
 import { useUserAuth } from '../../contexts/UserAuthContext';
-import { toast } from 'react-hot-toast';
 
-export default function page() {
+export default function WishlistPage() {
   const { wishlist, isLoading, removeFromWishlist, clearWishlist, moveToCart, updateSettings, getShareableLink, refreshWishlist } = useWishlist();
   const { addToCart } = useCart();
   const { user } = useUserAuth();
@@ -54,7 +54,7 @@ export default function page() {
     setIsMoving(itemId);
     const success = await moveToCart(itemId, 1, product.platform?.[0]);
     setIsMoving(null);
-
+    
     if (success) {
       toast.success(`${product.name} moved to cart`);
     }
@@ -64,7 +64,7 @@ export default function page() {
     setIsRemoving(itemId);
     const success = await removeFromWishlist(itemId);
     setIsRemoving(null);
-
+    
     if (success) {
       toast.success(`${productName} removed from wishlist`);
     }
@@ -104,7 +104,7 @@ export default function page() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-[#1a1a1a] flex items-center justify-center">
+      <div className="min-h-[60vh] flex items-center justify-center">
         <Loader2 className="w-12 h-12 text-purple-500 animate-spin" />
       </div>
     );
@@ -112,7 +112,7 @@ export default function page() {
 
   if (!wishlist || wishlist.items.length === 0) {
     return (
-      <div className="min-h-screen bg-[#1a1a1a] flex items-center justify-center">
+      <div className="min-h-[60vh] flex items-center justify-center px-4">
         <div className="text-center max-w-md">
           <div className="w-24 h-24 bg-purple-500/20 rounded-full flex items-center justify-center mx-auto mb-6">
             <Heart className="w-12 h-12 text-purple-500" />
@@ -134,7 +134,7 @@ export default function page() {
   }
 
   return (
-    <div className="min-h-screen bg-[#1a1a1a] py-8 px-4 sm:px-6 lg:px-8">
+    <div className="py-8 px-4 sm:px-6">
       <div className="max-w-7xl mx-auto">
         {/* Breadcrumb */}
         <nav className="flex items-center gap-2 text-sm text-gray-400 mb-6">
@@ -186,11 +186,11 @@ export default function page() {
         </div>
 
         {/* Wishlist Items Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-6">
-          {wishlist.items.map((item) => (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          {wishlist.items.map((item: any) => (
             <div
               key={item._id}
-              className="group rounded-xl overflow-hidden border border-gray-800 hover:border-orange-500/50 transition-all duration-300"
+              className="group bg-[#2A2A2A] rounded-xl overflow-hidden border border-gray-800 hover:border-purple-500/50 transition-all duration-300"
             >
               {/* Product Image */}
               <Link href={`/product/${item.product.slug || item.product._id}`} className="block relative aspect-square overflow-hidden bg-[#1f1f1f]">
@@ -227,7 +227,7 @@ export default function page() {
                     {item.product.name}
                   </h3>
                 </Link>
-
+                
                 {item.product.brand && (
                   <p className="text-sm text-gray-500 mb-2">{item.product.brand}</p>
                 )}
@@ -245,7 +245,7 @@ export default function page() {
 
                 {item.product.platform && item.product.platform.length > 0 && (
                   <div className="flex flex-wrap gap-1 mb-3">
-                    {item.product.platform.slice(0, 2).map((platform) => (
+                    {item.product.platform.slice(0, 2).map((platform: any) => (
                       <span
                         key={platform}
                         className="px-2 py-0.5 bg-gray-700 text-gray-300 text-xs rounded"
@@ -327,12 +327,14 @@ export default function page() {
                   </div>
                   <button
                     onClick={() => setSettings({ ...settings, isPublic: !settings.isPublic })}
-                    className={`relative w-12 h-6 rounded-full transition ${settings.isPublic ? 'bg-purple-600' : 'bg-gray-700'
-                      }`}
+                    className={`relative w-12 h-6 rounded-full transition ${
+                      settings.isPublic ? 'bg-purple-600' : 'bg-gray-700'
+                    }`}
                   >
                     <div
-                      className={`absolute top-1 w-4 h-4 bg-white rounded-full transition ${settings.isPublic ? 'right-1' : 'left-1'
-                        }`}
+                      className={`absolute top-1 w-4 h-4 bg-white rounded-full transition ${
+                        settings.isPublic ? 'right-1' : 'left-1'
+                      }`}
                     />
                   </button>
                 </div>

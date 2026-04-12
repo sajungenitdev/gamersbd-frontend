@@ -8,6 +8,8 @@ import { CartProvider } from "./contexts/CartContext";
 import { Toaster } from "react-hot-toast";
 import { CartDebug } from "../components/CartDebug";
 import { WishlistProvider } from "./contexts/WishlistContext";
+import { OrderProvider } from "./contexts/OrderContext";
+import { CurrencyProvider } from "./contact/CurrencyContext";
 // One line to import and export metadata
 export { metadata } from "../components/metaData/metadata";
 
@@ -41,34 +43,38 @@ export default function RootLayout({
           <UserAuthProvider>
             <CartProvider>
               <WishlistProvider>
-                <Header />
-                {children}
-                <Footer />
-                <Toaster
-                  position="bottom-right"
-                  toastOptions={{
-                    style: {
-                      background: "#2A2A2A",
-                      color: "#fff",
-                      border: "1px solid #3f3f46",
-                      borderRadius: "12px",
-                    },
-                    success: {
-                      duration: 3000,
-                      iconTheme: {
-                        primary: "#10b981",
-                        secondary: "#fff",
-                      },
-                    },
-                    error: {
-                      duration: 4000,
-                      iconTheme: {
-                        primary: "#ef4444",
-                        secondary: "#fff",
-                      },
-                    },
-                  }}
-                />
+                <OrderProvider>
+                  <CurrencyProvider>
+                    <Header />
+                    {children}
+                    <Footer />
+                    <Toaster
+                      position="bottom-right"
+                      toastOptions={{
+                        style: {
+                          background: "#2A2A2A",
+                          color: "#fff",
+                          border: "1px solid #3f3f46",
+                          borderRadius: "12px",
+                        },
+                        success: {
+                          duration: 3000,
+                          iconTheme: {
+                            primary: "#10b981",
+                            secondary: "#fff",
+                          },
+                        },
+                        error: {
+                          duration: 4000,
+                          iconTheme: {
+                            primary: "#ef4444",
+                            secondary: "#fff",
+                          },
+                        },
+                      }}
+                    />
+                  </CurrencyProvider>
+                </OrderProvider>
               </WishlistProvider>
             </CartProvider>
           </UserAuthProvider>

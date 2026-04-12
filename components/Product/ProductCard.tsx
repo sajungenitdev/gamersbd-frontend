@@ -7,6 +7,7 @@ import { useState, useEffect } from "react";
 import { ShoppingCart, Heart, Eye, Star, Flame, Zap } from "lucide-react";
 import axios from "axios";
 import { toast } from "react-hot-toast";
+import { useCurrency } from "../../app/contact/CurrencyContext";
 
 interface Product {
   _id: string;
@@ -37,6 +38,7 @@ interface ProductCardProps {
 }
 
 const ProductCard = ({ product, categorySlug, viewMode }: ProductCardProps) => {
+  const { formatPrice } = useCurrency();
   const [isHovered, setIsHovered] = useState(false);
   const [isWishlisted, setIsWishlisted] = useState(false);
 
@@ -76,7 +78,7 @@ const ProductCard = ({ product, categorySlug, viewMode }: ProductCardProps) => {
         newFavorites = [...JSON.parse(localStorage.getItem('favorites') || '[]'), product._id];
         toast.success('Added to wishlist');
       }
-      
+
       setIsWishlisted(!isWishlisted);
       localStorage.setItem('favorites', JSON.stringify(newFavorites));
     } catch (error) {
@@ -91,13 +93,13 @@ const ProductCard = ({ product, categorySlug, viewMode }: ProductCardProps) => {
     try {
       const existingCart = JSON.parse(localStorage.getItem('cart') || '[]');
       const existingItem = existingCart.find((item: any) => item._id === product._id);
-      
+
       if (existingItem) {
         existingItem.quantity += 1;
       } else {
         existingCart.push({ ...product, quantity: 1 });
       }
-      
+
       localStorage.setItem('cart', JSON.stringify(existingCart));
       toast.success(`Added ${product.name} to cart!`);
     } catch (error) {
@@ -115,7 +117,7 @@ const ProductCard = ({ product, categorySlug, viewMode }: ProductCardProps) => {
       };
       return colorMap[color] || "from-purple-600 to-purple-700";
     }
-    
+
     const badgeColors: Record<string, string> = {
       New: "from-emerald-600 to-emerald-700",
       Sale: "from-red-600 to-red-700",
@@ -135,9 +137,8 @@ const ProductCard = ({ product, categorySlug, viewMode }: ProductCardProps) => {
 
   return (
     <div
-      className={`group relative bg-[#1a1a1a] rounded-2xl hover:shadow-2xl transition-all duration-500 overflow-hidden border border-gray-800/50 hover:border-purple-500/50 ${
-        viewMode === "list" ? "flex" : ""
-      }`}
+      className={`group relative bg-[#1a1a1a] rounded-2xl hover:shadow-2xl transition-all duration-500 overflow-hidden border border-gray-800/50 hover:border-purple-500/50 ${viewMode === "list" ? "flex" : ""
+        }`}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
@@ -147,9 +148,8 @@ const ProductCard = ({ product, categorySlug, viewMode }: ProductCardProps) => {
       >
         {/* Image Container */}
         <div
-          className={`relative ${
-            viewMode === "grid" ? "aspect-square" : "w-48 h-48"
-          } overflow-hidden bg-[#1a1a1a]`}
+          className={`relative ${viewMode === "grid" ? "aspect-square" : "w-48 h-48"
+            } overflow-hidden bg-[#1a1a1a]`}
         >
           <Image
             src={product.mainImage || "/placeholder-image.jpg"}
@@ -172,9 +172,8 @@ const ProductCard = ({ product, categorySlug, viewMode }: ProductCardProps) => {
 
           {/* Action Buttons */}
           <div
-            className={`absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent flex items-center justify-center gap-3 transition-all duration-300 ${
-              isHovered ? "opacity-100" : "opacity-0 pointer-events-none"
-            }`}
+            className={`absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent flex items-center justify-center gap-3 transition-all duration-300 ${isHovered ? "opacity-100" : "opacity-0 pointer-events-none"
+              }`}
           >
             <button
               className="w-10 h-10 bg-white/10 backdrop-blur-md rounded-full flex items-center justify-center hover:bg-purple-600 transition-all duration-300 transform hover:scale-110"
@@ -188,9 +187,8 @@ const ProductCard = ({ product, categorySlug, viewMode }: ProductCardProps) => {
               title={isWishlisted ? "Remove from Wishlist" : "Add to Wishlist"}
             >
               <Heart
-                className={`w-4 h-4 transition-all ${
-                  isWishlisted ? "fill-red-500 text-red-500" : "text-white"
-                }`}
+                className={`w-4 h-4 transition-all ${isWishlisted ? "fill-red-500 text-red-500" : "text-white"
+                  }`}
               />
             </button>
           </div>
@@ -222,11 +220,10 @@ const ProductCard = ({ product, categorySlug, viewMode }: ProductCardProps) => {
                 {[...Array(5)].map((_, i) => (
                   <Star
                     key={i}
-                    className={`w-3 h-3 ${
-                      i < Math.floor(ratingValue)
+                    className={`w-3 h-3 ${i < Math.floor(ratingValue)
                         ? "fill-yellow-500 text-yellow-500"
                         : "text-gray-600"
-                    }`}
+                      }`}
                   />
                 ))}
               </div>
@@ -241,10 +238,13 @@ const ProductCard = ({ product, categorySlug, viewMode }: ProductCardProps) => {
             <span className="text-xl font-bold text-white">
               ${product.finalPrice.toFixed(2)}
             </span>
-            {product.discountPrice > 0 && product.price > product.finalPrice && (
-              <span className="text-sm text-gray-500 line-through">
-                ${product.price.toFixed(2)}
-              </span>
+            {product.discountPrice ? (
+              <>
+                <span className="current-price">{formatPrice(product.discountPrice)}</span>
+                <span className="original-price">{formatPrice(product.price)}</span>
+              </>
+            ) : (
+              <span className="price">{formatPrice(product.price)}</span>
             )}
           </div>
 
@@ -273,11 +273,10 @@ const ProductCard = ({ product, categorySlug, viewMode }: ProductCardProps) => {
           <button
             onClick={addToCart}
             disabled={!product.inStock}
-            className={`w-full py-2 rounded-lg font-medium flex items-center justify-center gap-2 transition-all duration-300 ${
-              product.inStock
+            className={`w-full py-2 rounded-lg font-medium flex items-center justify-center gap-2 transition-all duration-300 ${product.inStock
                 ? "bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white"
                 : "bg-[#1a1a1a] text-gray-500 cursor-not-allowed border border-gray-800"
-            }`}
+              }`}
           >
             <ShoppingCart className="w-4 h-4" />
             <span className="text-sm">

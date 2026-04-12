@@ -34,7 +34,7 @@ export default function DashboardLayout({
 
   return (
     <div className="bg-[#1a1a1a]">
-      <div className="flex min-h-screen max-w-7xl mx-auto">
+      <div className="flex min-h-screen max-w-7xl mx-auto gap-4">
         <DashboardSidebar user={user} />
         <div className="flex-1 overflow-x-hidden ">
           <div className="">{children}</div>

@@ -7,6 +7,7 @@ import { X, Minus, Plus, Trash2, ShoppingBag } from "lucide-react";
 import { useCart } from "../../app/contexts/CartContext";
 import Image from "next/image";
 import Link from "next/link";
+import { useCurrency } from "../../app/contact/CurrencyContext";
 
 interface CartDrawerProps {
   isOpen: boolean;
@@ -14,6 +15,7 @@ interface CartDrawerProps {
 }
 
 export const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose }) => {
+  const { formatPrice } = useCurrency();
   const {
     items,
     totalItems,
@@ -117,14 +119,11 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose }) => {
                                           {item.name}
                                         </h3>
                                         <p className="ml-4">
-                                          $
-                                          {(item.price * item.quantity).toFixed(
-                                            2,
-                                          )}
+                                          {formatPrice(item.price)}
                                         </p>
                                       </div>
                                       <p className="mt-1 text-sm text-gray-400">
-                                        ${item.price.toFixed(2)} each
+                                        {formatPrice(item.price)} each
                                       </p>
                                     </div>
                                     <div className="flex flex-1 items-end justify-between text-sm mt-2">

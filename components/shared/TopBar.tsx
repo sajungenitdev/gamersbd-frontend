@@ -8,11 +8,13 @@ import { useUserAuth } from "../../app/contexts/UserAuthContext";
 import { useCart } from "../../app/contexts/CartContext";
 import { useWishlist } from "../../app/contexts/WishlistContext";
 import { CartDrawer } from "../Cart/CartDrawer";
+import { useCurrency } from "../../app/contact/CurrencyContext";
 
 const TopBar = () => {
   const { user } = useUserAuth();
   const { totalItems, isLoading } = useCart();
   const { wishlist, refreshWishlist } = useWishlist();
+  const { currency, setCurrency, formatPrice } = useCurrency();
   const [cartCount, setCartCount] = useState(0);
   const [wishlistCount, setWishlistCount] = useState(0);
   const [isCartDrawerOpen, setIsCartDrawerOpen] = useState(false);

@@ -1,16 +1,11 @@
 "use client";
 import React, { useState, useEffect, useMemo, useCallback } from "react";
+import { useRouter } from "next/navigation"; // ✅ Fixed: Use next/navigation instead of next/router
 import {
   Search,
-  SlidersHorizontal,
   X,
   ChevronDown,
   ChevronRight,
-  Star,
-  Heart,
-  Eye,
-  CheckCircle,
-  XCircle,
   Loader2,
   Filter,
   Tag,
@@ -20,8 +15,8 @@ import {
 import Link from "next/link";
 import { toast, Toaster } from "react-hot-toast";
 import axios from "axios";
-import { useCart } from "../../app/contexts/CartContext";
 import AddToCartButton from "../ui/AddToCartButton";
+import { useCart } from "../../app/contexts/CartContext";
 
 // Types
 interface Category {
@@ -97,15 +92,17 @@ const ModernAccordion = ({
           )}
         </div>
         <div
-          className={`transform transition-all duration-300 ${isOpen ? "rotate-180" : ""
-            }`}
+          className={`transform transition-all duration-300 ${
+            isOpen ? "rotate-180" : ""
+          }`}
         >
           <ChevronDown className="w-4 h-4 text-gray-500 group-hover:text-purple-400" />
         </div>
       </button>
       <div
-        className={`overflow-hidden transition-all duration-300 ease-in-out ${isOpen ? "max-h-full opacity-100 pb-4" : "max-h-0 opacity-0"
-          }`}
+        className={`overflow-hidden transition-all duration-300 ease-in-out ${
+          isOpen ? "max-h-full opacity-100 pb-4" : "max-h-0 opacity-0"
+        }`}
       >
         {children}
       </div>
@@ -127,7 +124,6 @@ const CategoryTree = ({
 }) => {
   const [expandedCategories, setExpandedCategories] = useState<string[]>([]);
 
-  // Auto-expand parent categories when a subcategory is selected
   useEffect(() => {
     const expandParentCategories = (
       categoryList: Category[],
@@ -159,7 +155,7 @@ const CategoryTree = ({
     setExpandedCategories((prev) =>
       prev.includes(categoryId)
         ? prev.filter((id) => id !== categoryId)
-        : [...prev, categoryId],
+        : [...prev, categoryId]
     );
   };
 
@@ -173,13 +169,13 @@ const CategoryTree = ({
     return (
       <div key={category._id} className="mb-1">
         <div
-          className={`flex items-center gap-2 rounded-lg transition-all duration-200 ${isSelected
+          className={`flex items-center gap-2 rounded-lg transition-all duration-200 ${
+            isSelected
               ? "bg-purple-600/10 border border-purple-500/30"
               : "hover:bg-gray-800/50"
-            }`}
+          }`}
           style={{ paddingLeft: `${paddingLeft}px` }}
         >
-          {/* Expand/Collapse Button */}
           {hasSubcategories && (
             <button
               onClick={() => toggleCategory(category._id)}
@@ -194,7 +190,6 @@ const CategoryTree = ({
           )}
           {!hasSubcategories && <div className="w-6" />}
 
-          {/* Radio Button */}
           <input
             type="radio"
             name="category"
@@ -204,28 +199,26 @@ const CategoryTree = ({
             className="w-4 h-4 accent-purple-600 cursor-pointer flex-shrink-0"
           />
 
-          {/* Category Label */}
           <label
             htmlFor={`cat-${category._id}`}
-            className={`flex-1 py-2 text-sm cursor-pointer transition-colors ${isSelected
+            className={`flex-1 py-2 text-sm cursor-pointer transition-colors ${
+              isSelected
                 ? "text-purple-400 font-medium"
                 : "text-gray-400 hover:text-white"
-              }`}
+            }`}
           >
             {category.name}
           </label>
 
-          {/* Product Count */}
           <span className="text-xs text-gray-600 bg-gray-900/50 px-2 py-0.5 rounded-full mr-2">
             {getProductCountByCategory(category.name)}
           </span>
         </div>
 
-        {/* Render Subcategories */}
         {hasSubcategories && isExpanded && (
           <div className="ml-4 mt-1 space-y-1">
             {category.subcategories!.map((sub) =>
-              renderCategoryItem(sub, level + 1),
+              renderCategoryItem(sub, level + 1)
             )}
           </div>
         )}
@@ -235,7 +228,6 @@ const CategoryTree = ({
 
   return (
     <div className="space-y-1">
-      {/* All Products Option */}
       <div className="flex items-center gap-2 rounded-lg hover:bg-gray-800/50 transition-all duration-200">
         <div className="w-6" />
         <input
@@ -248,10 +240,11 @@ const CategoryTree = ({
         />
         <label
           htmlFor="cat-all"
-          className={`flex-1 py-2 text-sm cursor-pointer transition-colors ${selectedCategory === "All"
+          className={`flex-1 py-2 text-sm cursor-pointer transition-colors ${
+            selectedCategory === "All"
               ? "text-purple-400 font-medium"
               : "text-gray-400 hover:text-white"
-            }`}
+          }`}
         >
           All Products
         </label>
@@ -260,13 +253,12 @@ const CategoryTree = ({
         </span>
       </div>
 
-      {/* Render Categories */}
       {categories.map((category) => renderCategoryItem(category))}
     </div>
   );
 };
 
-// Product Card Component - Simplified version
+// Product Card Component - Fixed version
 const ProductCard = React.memo(
   ({
     product,
@@ -275,6 +267,10 @@ const ProductCard = React.memo(
     product: Product;
     onQuickView: (product: Product) => void;
   }) => {
+    const router = useRouter();
+    const { addToCart } = useCart();
+    const [isBuyingNow, setIsBuyingNow] = useState(false);
+
     const finalPrice = product.discountPrice || product.price;
     const originalPrice = product.originalPrice || product.price;
     const discount =
@@ -302,11 +298,11 @@ const ProductCard = React.memo(
 
     const categoryName = getCategoryName();
     const imageUrl = getImageUrl();
+
     const displayPrice = finalPrice > 1000 ? finalPrice / 100 : finalPrice;
     const displayOriginalPrice =
       originalPrice > 1000 ? originalPrice / 100 : originalPrice;
 
-    // Prepare product data for AddToCartButton
     const cartProduct = {
       _id: product._id,
       id: product._id,
@@ -320,17 +316,29 @@ const ProductCard = React.memo(
       platform: product.platform?.[0] || "PS5",
     };
 
-    const handleBuyNow = (e: React.MouseEvent) => {
+    const handleBuyNow = async (e: React.MouseEvent) => {
       e.preventDefault();
       e.stopPropagation();
-      // Add to cart and redirect
-      window.location.href = `/checkout?product=${product._id}`;
+      
+      if (!product) return;
+      setIsBuyingNow(true);
+
+      try {
+        const success = await addToCart(cartProduct, 1);
+        if (success) {
+          router.push("/checkout");
+        }
+      } catch (error) {
+        console.error("Failed to add to cart:", error);
+        toast.error("Failed to add to cart");
+      } finally {
+        setIsBuyingNow(false);
+      }
     };
 
     return (
       <div className="relative group overflow-hidden rounded-2xl transition-all duration-300">
         <Link href={`/product/${product._id}`}>
-          {/* Image Container */}
           <div className="relative w-full aspect-square overflow-hidden rounded-2xl bg-gray-800 dark:bg-gray-200">
             <img
               src={imageUrl}
@@ -339,14 +347,12 @@ const ProductCard = React.memo(
               loading="lazy"
             />
 
-            {/* Discount Badge */}
             {discount > 0 && (
               <div className="absolute top-3 left-3 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full z-20">
                 -{discount}%
               </div>
             )}
 
-            {/* Out of Stock Overlay */}
             {!product.inStock && (
               <div className="absolute inset-0 bg-black/70 flex items-center justify-center z-20 rounded-2xl">
                 <span className="px-3 py-1 bg-red-500/90 text-white text-sm rounded-full">
@@ -356,20 +362,16 @@ const ProductCard = React.memo(
             )}
           </div>
 
-          {/* Product Info */}
           <div className="p-4">
-            {/* Category Name */}
             <p className="text-sm text-gray-400 dark:text-gray-600 mb-1">
               {categoryName}
             </p>
 
-            {/* Product Name & Cart Button */}
             <div className="flex items-center justify-between">
               <h3 className="text-lg font-semibold text-white dark:text-black line-clamp-1">
                 {product.name || "Unnamed Product"}
               </h3>
 
-              {/* Add to Cart Button - Using your component */}
               {product.inStock && (
                 <AddToCartButton
                   product={cartProduct}
@@ -382,7 +384,6 @@ const ProductCard = React.memo(
               )}
             </div>
 
-            {/* Price */}
             <div className="flex items-center gap-2 mt-2">
               <span className="text-white dark:text-black font-normal text-lg">
                 ${displayPrice.toFixed(2)}
@@ -399,13 +400,17 @@ const ProductCard = React.memo(
               )}
             </div>
 
-            {/* Buy Now Button */}
             {product.inStock ? (
               <button
                 onClick={handleBuyNow}
-                className="w-full mt-3 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white text-sm font-semibold rounded-lg transition-all duration-300 transform hover:scale-[1.02] active:scale-95"
+                disabled={isBuyingNow}
+                className="w-full mt-3 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white text-sm font-semibold rounded-lg transition-all duration-300 transform hover:scale-[1.02] active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Buy Now
+                {isBuyingNow ? (
+                  <Loader2 className="w-4 h-4 animate-spin mx-auto" />
+                ) : (
+                  "Buy Now"
+                )}
               </button>
             ) : (
               <button
@@ -419,7 +424,7 @@ const ProductCard = React.memo(
         </Link>
       </div>
     );
-  },
+  }
 );
 
 ProductCard.displayName = "ProductCard";
@@ -523,21 +528,20 @@ const AllProducts = () => {
   const [categories, setCategories] = useState<Category[]>([]);
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [selectedPriceRange, setSelectedPriceRange] = useState<string | null>(
-    null,
+    null
   );
   const [showInStockOnly, setShowInStockOnly] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState("featured");
   const [mobileFilterOpen, setMobileFilterOpen] = useState(false);
   const [quickViewProduct, setQuickViewProduct] = useState<Product | null>(
-    null,
+    null
   );
   const [mounted, setMounted] = useState(false);
 
   const API_URL =
     process.env.NEXT_PUBLIC_API_URL || "https://gamersbd-server.onrender.com";
 
-  // Fetch categories tree
   useEffect(() => {
     const fetchCategoryTree = async () => {
       try {
@@ -552,7 +556,6 @@ const AllProducts = () => {
     fetchCategoryTree();
   }, [API_URL]);
 
-  // Fetch products
   useEffect(() => {
     const fetchProducts = async () => {
       try {
@@ -587,7 +590,6 @@ const AllProducts = () => {
   const filteredProducts = useMemo(() => {
     let filtered = [...products];
 
-    // Category filter
     if (selectedCategory !== "All") {
       filtered = filtered.filter((product) => {
         const productCategory = (() => {
@@ -600,7 +602,6 @@ const AllProducts = () => {
       });
     }
 
-    // Price filter
     if (selectedPriceRange) {
       const range = priceRanges.find((r) => r.label === selectedPriceRange);
       if (range) {
@@ -611,28 +612,25 @@ const AllProducts = () => {
       }
     }
 
-    // Stock filter
     if (showInStockOnly) {
       filtered = filtered.filter((product) => product.inStock);
     }
 
-    // Search filter
     if (searchQuery) {
       filtered = filtered.filter((product) =>
-        product.name?.toLowerCase().includes(searchQuery.toLowerCase()),
+        product.name?.toLowerCase().includes(searchQuery.toLowerCase())
       );
     }
 
-    // Sorting
     switch (sortBy) {
       case "price-low":
         filtered.sort(
-          (a, b) => (a.discountPrice || a.price) - (b.discountPrice || b.price),
+          (a, b) => (a.discountPrice || a.price) - (b.discountPrice || b.price)
         );
         break;
       case "price-high":
         filtered.sort(
-          (a, b) => (b.discountPrice || b.price) - (a.discountPrice || a.price),
+          (a, b) => (b.discountPrice || b.price) - (a.discountPrice || a.price)
         );
         break;
       case "rating":
@@ -656,7 +654,7 @@ const AllProducts = () => {
 
       const countProductsInCategory = (
         categoryList: Category[],
-        targetName: string,
+        targetName: string
       ): number => {
         let count = 0;
         for (const cat of categoryList) {
@@ -679,7 +677,7 @@ const AllProducts = () => {
 
       return countProductsInCategory(categories, categoryName);
     },
-    [products, categories],
+    [products, categories]
   );
 
   const clearFilters = () => {
@@ -695,7 +693,6 @@ const AllProducts = () => {
     <div className="min-h-screen bg-[#1a1a1a]">
       <Toaster position="bottom-right" />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Mobile Filter Button */}
         <div className="lg:hidden mb-4">
           <button
             onClick={() => setMobileFilterOpen(!mobileFilterOpen)}
@@ -706,7 +703,9 @@ const AllProducts = () => {
               Filters & Sorting
             </span>
             <ChevronDown
-              className={`w-5 h-5 transition-transform ${mobileFilterOpen ? "rotate-180" : ""}`}
+              className={`w-5 h-5 transition-transform ${
+                mobileFilterOpen ? "rotate-180" : ""
+              }`}
             />
           </button>
         </div>
@@ -714,10 +713,11 @@ const AllProducts = () => {
         <div className="flex flex-col lg:flex-row gap-8">
           {/* Sidebar Filters */}
           <div
-            className={`lg:w-72 flex-shrink-0 ${mobileFilterOpen ? "block" : "hidden lg:block"}`}
+            className={`lg:w-72 flex-shrink-0 ${
+              mobileFilterOpen ? "block" : "hidden lg:block"
+            }`}
           >
             <div className="bg-[#2A2A2A] rounded-2xl overflow-hidden sticky top-24 border border-gray-800">
-              {/* Header */}
               <div className="px-6 py-4 border-b border-gray-800">
                 <div className="flex justify-between items-center">
                   <div className="flex items-center gap-2">
@@ -736,7 +736,6 @@ const AllProducts = () => {
               </div>
 
               <div className="p-6 space-y-6 pt-0">
-                {/* Search */}
                 <div className="mb-3">
                   <div className="relative">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
@@ -750,7 +749,6 @@ const AllProducts = () => {
                   </div>
                 </div>
 
-                {/* Categories */}
                 <ModernAccordion
                   title="Categories"
                   defaultOpen={true}
@@ -764,7 +762,6 @@ const AllProducts = () => {
                   />
                 </ModernAccordion>
 
-                {/* Price Range */}
                 <ModernAccordion
                   title="Price Range"
                   defaultOpen={true}
@@ -791,7 +788,6 @@ const AllProducts = () => {
                   </div>
                 </ModernAccordion>
 
-                {/* Availability */}
                 <ModernAccordion
                   title="Availability"
                   icon={<Package className="w-4 h-4" />}
@@ -817,7 +813,6 @@ const AllProducts = () => {
 
           {/* Products Grid */}
           <div className="flex-1">
-            {/* Sort Bar */}
             <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mb-6">
               <p className="text-sm text-gray-400">
                 Showing{" "}
@@ -845,7 +840,6 @@ const AllProducts = () => {
               </div>
             </div>
 
-            {/* Products Display */}
             {loading ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-6">
                 {[...Array(8)].map((_, i) => (

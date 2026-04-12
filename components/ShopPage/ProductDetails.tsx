@@ -18,12 +18,15 @@ import {
   Loader2,
   XCircle,
   ChevronRight,
+  AlertCircle,
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import axios from "axios";
 import { toast, Toaster } from "react-hot-toast";
 import { useCart } from "../../app/contexts/CartContext";
+import { useWishlist } from "../../app/contexts/WishlistContext";
+import { useUserAuth } from "../../app/contexts/UserAuthContext";
 
 interface Product {
   _id: string;
@@ -46,16 +49,39 @@ interface Product {
 
 interface Review {
   _id: string;
-  user: { name: string; avatar?: string };
+  user: { 
+    _id: string;
+    name: string; 
+    avatar?: string;
+  };
   rating: number;
+  title?: string;  // Added title
   comment: string;
+  images?: string[];
+  isVerifiedPurchase?: boolean;
+  helpful?: {  // Added helpful property
+    count: number;
+    users: string[];
+  };
+  status?: 'pending' | 'approved' | 'rejected';
   createdAt: string;
+  updatedAt?: string;
 }
 
 const ProductDetails = () => {
   const params = useParams();
   const router = useRouter();
   const { addToCart, isAddingProduct } = useCart();
+  const { 
+    wishlist, 
+    addToWishlist, 
+    removeFromWishlist, 
+    checkInWishlist, 
+    refreshWishlist,
+    isLoading: wishlistLoading 
+  } = useWishlist();
+  const { user } = useUserAuth();
+  
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
   const [selectedImage, setSelectedImage] = useState(0);
@@ -63,10 +89,12 @@ const ProductDetails = () => {
   const [activeTab, setActiveTab] = useState("description");
   const [relatedProducts, setRelatedProducts] = useState<Product[]>([]);
   const [reviews, setReviews] = useState<Review[]>([]);
+  const [isLoadingReviews, setIsLoadingReviews] = useState(false);
   const [isWishlisted, setIsWishlisted] = useState(false);
   const [isSharing, setIsSharing] = useState(false);
   const [isAddingToWishlist, setIsAddingToWishlist] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
+  const [wishlistItemId, setWishlistItemId] = useState<string | null>(null);
 
   const productId = params?.id as string;
   const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://gamersbd-server.onrender.com";
@@ -141,7 +169,6 @@ const ProductDetails = () => {
       if (!product?._id) return;
 
       try {
-        // Try to get related by category first
         let categoryId = "";
         if (typeof product.category === "object") {
           categoryId = product.category._id;
@@ -167,7 +194,6 @@ const ProductDetails = () => {
           }
         }
 
-        // Fallback: Get latest products
         const fallbackResponse = await axios.get(`${API_URL}/api/products`, {
           params: { limit: 4, exclude: product._id },
         });
@@ -186,7 +212,7 @@ const ProductDetails = () => {
     }
   }, [product, API_URL]);
 
-  // Update the fetchReviews useEffect in your ProductDetails component
+  // Fetch reviews
   useEffect(() => {
     const fetchReviews = async () => {
       if (!product?._id) return;
@@ -200,13 +226,7 @@ const ProductDetails = () => {
         }
       } catch (error: any) {
         console.error("Failed to fetch reviews:", error);
-        // Don't show error to user, just set empty reviews
         setReviews([]);
-
-        // Optional: If you want to show a message only on 404
-        if (error.response?.status === 404) {
-          console.log("Reviews endpoint not available yet");
-        }
       }
     };
 
@@ -217,24 +237,34 @@ const ProductDetails = () => {
 
   // Check if product is in wishlist
   useEffect(() => {
-    const checkWishlist = async () => {
-      const token = localStorage.getItem("userToken") || sessionStorage.getItem("userToken");
-      if (!token || !product?._id) return;
-
+    const checkWishlistStatus = async () => {
+      if (!user || !product?._id) return;
+      
       try {
-        const response = await axios.get(`${API_URL}/api/wishlist/check/${product._id}`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        setIsWishlisted(response.data.isWishlisted || false);
+        // Refresh wishlist to get latest data
+        await refreshWishlist();
       } catch (error) {
-        console.error("Failed to check wishlist:", error);
+        console.error("Failed to refresh wishlist:", error);
       }
     };
 
-    if (product) {
-      checkWishlist();
+    if (product && user) {
+      checkWishlistStatus();
     }
-  }, [product, API_URL]);
+  }, [product, user, refreshWishlist]);
+
+  // Update wishlist status when wishlist changes
+  useEffect(() => {
+    if (!product?._id || !wishlist) {
+      setIsWishlisted(false);
+      setWishlistItemId(null);
+      return;
+    }
+
+    const item = wishlist.items?.find((item: any) => item.product._id === product._id);
+    setIsWishlisted(!!item);
+    setWishlistItemId(item?._id || null);
+  }, [wishlist, product]);
 
   const increaseQuantity = useCallback(() => {
     if (product && quantity < product.stock) {
@@ -251,38 +281,30 @@ const ProductDetails = () => {
   }, [quantity]);
 
   const handleAddToWishlist = async () => {
-    const token = localStorage.getItem("userToken") || sessionStorage.getItem("userToken");
-
-    if (!token) {
+    if (!product) return;
+    
+    if (!user) {
       toast.error("Please login to add to wishlist");
-      router.push("/auth");
+      router.push("/login");
       return;
     }
 
     setIsAddingToWishlist(true);
 
     try {
-      if (isWishlisted) {
-        // Need to get the itemId first
-        const checkResponse = await axios.get(`${API_URL}/api/wishlist/check/${product?._id}`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-
-        if (checkResponse.data.inWishlist && checkResponse.data.itemId) {
-          await axios.delete(`${API_URL}/api/wishlist/remove/${checkResponse.data.itemId}`, {
-            headers: { Authorization: `Bearer ${token}` },
-          });
+      if (isWishlisted && wishlistItemId) {
+        const success = await removeFromWishlist(wishlistItemId);
+        if (success) {
           setIsWishlisted(false);
+          setWishlistItemId(null);
           toast.success("Removed from wishlist");
         }
       } else {
-        await axios.post(
-          `${API_URL}/api/wishlist/add`,
-          { productId: product?._id },
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
-        setIsWishlisted(true);
-        toast.success("Added to wishlist");
+        const success = await addToWishlist(product._id);
+        if (success) {
+          setIsWishlisted(true);
+          toast.success("Added to wishlist");
+        }
       }
     } catch (error: any) {
       console.error("Failed to update wishlist:", error);
@@ -597,7 +619,7 @@ const ProductDetails = () => {
             <div className="flex gap-3">
               <button
                 onClick={handleAddToWishlist}
-                disabled={isAddingToWishlist}
+                disabled={isAddingToWishlist || wishlistLoading}
                 className="flex-1 px-4 py-2 bg-[#2A2A2A] hover:bg-[#333] text-gray-400 hover:text-white rounded-lg transition-all duration-300 flex items-center justify-center gap-2 disabled:opacity-50"
               >
                 {isAddingToWishlist ? (
@@ -731,8 +753,13 @@ const ProductDetails = () => {
 
             {activeTab === "reviews" && (
               <div className="space-y-6">
-                {reviews.length === 0 ? (
+                {isLoadingReviews ? (
+                  <div className="flex justify-center py-12">
+                    <Loader2 className="w-8 h-8 text-purple-500 animate-spin" />
+                  </div>
+                ) : reviews.length === 0 ? (
                   <div className="text-center py-12 bg-[#2A2A2A] rounded-xl">
+                    <AlertCircle className="w-12 h-12 text-gray-500 mx-auto mb-4" />
                     <p className="text-gray-400 mb-4">No reviews yet.</p>
                     <Link
                       href={`/product/${product._id}/review`}
@@ -748,7 +775,7 @@ const ProductDetails = () => {
                         <div className="text-3xl font-bold text-white">
                           {averageRating.toFixed(1)}
                         </div>
-                        {renderStars(Math.round(averageRating))}
+                        {renderStars(averageRating)}
                         <p className="text-sm text-gray-400 mt-1">
                           Based on {reviews.length} reviews
                         </p>
@@ -780,7 +807,17 @@ const ProductDetails = () => {
                               {new Date(review.createdAt).toLocaleDateString()}
                             </span>
                           </div>
+                          {review.title && (
+                            <h4 className="text-white font-semibold mt-2">{review.title}</h4>
+                          )}
                           <p className="text-gray-300 mt-2">{review.comment}</p>
+                          {review.helpful && (
+                            <div className="flex items-center gap-2 mt-3">
+                              <button className="text-xs text-gray-500 hover:text-purple-400 transition">
+                                Helpful ({review.helpful.count})
+                              </button>
+                            </div>
+                          )}
                         </div>
                       ))}
                     </div>

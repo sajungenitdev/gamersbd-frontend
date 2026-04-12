@@ -25,7 +25,7 @@ export default function DashboardPage() {
   return (
     <div>
       {/* Welcome Header */}
-      <div className="bg-gradient-to-r from-purple-600/20 via-indigo-600/20 to-purple-600/20 rounded-2xl p-6 mb-8 border border-white/10">
+      <div className="bg-gradient-to-r from-purple-600/20 via-indigo-600/20 to-purple-600/20 rounded-2xl p-6 mb-8 border border-white/10 mt-3">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
             <h1 className="text-2xl md:text-3xl font-bold text-white">
