@@ -15,19 +15,17 @@ import Link from "next/link";
 const Footer = () => {
   const footerLinks = {
     information: [
-      { label: "Special Offers", href: "/specials" }, // Fixed typo
-      { label: "New Products", href: "/new" },
-      { label: "Top Sellers", href: "/top-sellers" },
+      { label: "Special Offers", href: "/shop" }, // Fixed typo
+      { label: "New Products", href: "/shop" },
+      { label: "Blogs", href: "/news" },
       { label: "About Us", href: "/about" },
       { label: "FAQs", href: "/faq" },
-      { label: "Order Tracking", href: "/track-order" },
     ],
     services: [
       { label: "My Account", href: "/dashboard" },
-      { label: "Login/Register", href: "/login" },
-      { label: "My Orders", href: "/orders" },
-      { label: "My Addresses", href: "/addresses" },
-      { label: "Order Help", href: "/contact" }, // Fixed plural
+      { label: "Login/Register", href: "/auth" },
+      { label: "My Orders", href: "/dashboard/orders" },
+      { label: "Order Tracking", href: "/track-order" },
       { label: "Support", href: "/contact" },
     ],
   };
