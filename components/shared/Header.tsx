@@ -32,8 +32,8 @@ export default function Header() {
     const checkTheme = () => {
       // Check for data-theme attribute (daisyui) or dark class (Tailwind)
       const isDark =
-        document.documentElement.getAttribute('data-theme') === 'dark' ||
-        document.documentElement.classList.contains('dark');
+        document.documentElement.getAttribute("data-theme") === "dark" ||
+        document.documentElement.classList.contains("dark");
       setIsDarkMode(isDark);
     };
 
@@ -43,14 +43,17 @@ export default function Header() {
     // Listen for theme changes
     const observer = new MutationObserver((mutations) => {
       mutations.forEach((mutation) => {
-        if (mutation.attributeName === 'data-theme' || mutation.attributeName === 'class') {
+        if (
+          mutation.attributeName === "data-theme" ||
+          mutation.attributeName === "class"
+        ) {
           checkTheme();
         }
       });
     });
 
     observer.observe(document.documentElement, {
-      attributes: true
+      attributes: true,
     });
 
     return () => observer.disconnect();
@@ -272,10 +275,11 @@ export default function Header() {
       {/* Main Header - Sticky */}
       <div
         ref={mainHeaderRef}
-        className={`bg-[#191919] dark:bg-white shadow-sm transition-all duration-300 border-b border-gray-800 dark:border-gray-200 ${isSticky
-          ? "fixed top-0 left-0 right-0 z-[60] animate-slideDown"
-          : "relative"
-          }`}
+        className={`bg-[#191919] dark:bg-white shadow-sm transition-all duration-300 border-b border-gray-800 dark:border-gray-200 ${
+          isSticky
+            ? "fixed top-0 left-0 right-0 z-[60] animate-slideDown"
+            : "relative"
+        }`}
         style={{
           zIndex: isSticky ? 60 : 50,
           transform: isSticky ? "translateY(0)" : "none",
@@ -309,7 +313,11 @@ export default function Header() {
               {/* Dynamic Logo based on theme */}
               <Link href="/" className="p-0 pt-2 flex items-center">
                 <Image
-                  src={isDarkMode ? "/images/logo-black.png" : "/images/logo-white.png"}
+                  src={
+                    isDarkMode
+                      ? "/images/logo-black.png"
+                      : "/images/logo-white.png"
+                  }
                   alt="Gamersbd"
                   width={isSticky ? 160 : 180}
                   height={isSticky ? 45 : 50}
@@ -325,10 +333,11 @@ export default function Header() {
                 onMouseLeave={handleMouseLeave}
               >
                 <button
-                  className={`btn btn-ghost flex items-center gap-2 text-white dark:text-gray-900 ${activeDropdown === "categories"
-                    ? "bg-orange-600 dark:bg-gray-800"
-                    : ""
-                    }`}
+                  className={`btn btn-ghost flex items-center gap-2 text-white dark:text-gray-900 ${
+                    activeDropdown === "categories"
+                      ? "bg-orange-600 dark:bg-gray-800"
+                      : ""
+                  }`}
                 >
                   <svg
                     className="w-5 h-5"
@@ -345,8 +354,9 @@ export default function Header() {
                   </svg>
                   <span className="font-medium font-lato">CATEGORIES</span>
                   <svg
-                    className={`w-4 h-4 transition-transform duration-200 ${activeDropdown === "categories" ? "rotate-180" : ""
-                      }`}
+                    className={`w-4 h-4 transition-transform duration-200 ${
+                      activeDropdown === "categories" ? "rotate-180" : ""
+                    }`}
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -390,47 +400,49 @@ export default function Header() {
       )}
 
       {/* Dropdown Container - Fixed positioning when sticky */}
+      {/* Dropdown Container */}
       {(activeDropdown === "categories" ||
         activeDropdown === "specialized" ||
         activeDropdown === "offers") && (
-          <div
-            className={`left-0 right-0 transition-all duration-300 ${isSticky ? "fixed z-[61]" : "absolute z-[100]"
-              }`}
-            style={{
-              top: isSticky ? "73px" : "100%",
-            }}
-          >
-            {activeDropdown === "categories" && !loading && (
-              <CategoriesDropdown
-                categories={categories}
-                activeCategoryTab={activeCategoryTab}
-                onCategoryChange={setActiveCategoryTab}
-                onMouseEnter={() => handleMouseEnter("categories")}
-                onMouseLeave={handleMouseLeave}
-                onCloseDropdown={closeAllDropdowns}
-                isSticky={isSticky}
-              />
-            )}
+        <div
+          className={`left-0 right-0 transition-all duration-300 ${
+            isSticky ? "fixed z-[61]" : "absolute z-[100]"
+          }`}
+          style={{
+            top: isSticky ? "73px" : "100%",
+          }}
+        >
+          {activeDropdown === "categories" && !loading && (
+            <CategoriesDropdown
+              categories={categories}
+              activeCategoryTab={activeCategoryTab}
+              onCategoryChange={setActiveCategoryTab}
+              onMouseEnter={() => handleMouseEnter("categories")}
+              onMouseLeave={handleMouseLeave}
+              onCloseDropdown={closeAllDropdowns}
+              isSticky={isSticky}
+            />
+          )}
 
-            {activeDropdown === "specialized" && (
-              <SpecializedDropdown
-                items={specialized}
-                onMouseEnter={() => handleMouseEnter("specialized")}
-                onMouseLeave={handleMouseLeave}
-                isSticky={isSticky}
-              />
-            )}
+          {activeDropdown === "specialized" && (
+            <SpecializedDropdown
+              onMouseEnter={() => handleMouseEnter("specialized")}
+              onMouseLeave={handleMouseLeave}
+              onCloseDropdown={closeAllDropdowns}
+              isSticky={isSticky}
+            />
+          )}
 
-            {activeDropdown === "offers" && (
-              <OffersDropdown
-                items={offers}
-                onMouseEnter={() => handleMouseEnter("offers")}
-                onMouseLeave={handleMouseLeave}
-                isSticky={isSticky}
-              />
-            )}
-          </div>
-        )}
+          {activeDropdown === "offers" && (
+            <OffersDropdown
+              onMouseEnter={() => handleMouseEnter("offers")}
+              onMouseLeave={handleMouseLeave}
+              onCloseDropdown={closeAllDropdowns}
+              isSticky={isSticky}
+            />
+          )}
+        </div>
+      )}
 
       <MobileMenu
         isOpen={isMobileMenuOpen}

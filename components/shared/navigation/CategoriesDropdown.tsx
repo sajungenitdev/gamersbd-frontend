@@ -18,7 +18,7 @@ interface CategoriesDropdownProps {
   onCategoryChange: (category: string) => void;
   onMouseEnter: () => void;
   onMouseLeave: () => void;
-  onCloseDropdown?: () => void; // Add this prop for closing the dropdown
+  onCloseDropdown?: () => void;
   isSticky?: boolean;
 }
 
@@ -33,12 +33,26 @@ const CategoriesDropdown = ({
 }: CategoriesDropdownProps) => {
   const dropdownRef = useRef<HTMLDivElement>(null);
   const [dropdownHeight, setDropdownHeight] = useState<number | null>(null);
+  const [randomCategories, setRandomCategories] = useState<Category[]>([]);
 
   useEffect(() => {
     console.log(
       "CategoriesDropdown rendered with categories:",
       categories.length,
     );
+  }, [categories]);
+
+  // Select 8 random categories when component mounts or categories change
+  useEffect(() => {
+    if (categories.length > 0) {
+      // Shuffle array and get first 8
+      const shuffled = [...categories];
+      for (let i = shuffled.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+      }
+      setRandomCategories(shuffled.slice(0, 8));
+    }
   }, [categories]);
 
   // Adjust dropdown position based on sticky header
@@ -63,6 +77,18 @@ const CategoriesDropdown = ({
     }
     if (onCloseDropdown) {
       onCloseDropdown();
+    }
+  };
+
+  // Refresh random categories
+  const refreshRandomCategories = () => {
+    if (categories.length > 0) {
+      const shuffled = [...categories];
+      for (let i = shuffled.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+      }
+      setRandomCategories(shuffled.slice(0, 8));
     }
   };
 
@@ -121,13 +147,34 @@ const CategoriesDropdown = ({
       onMouseLeave={onMouseLeave}
     >
       <div className="flex gap-8">
-        {/* Left Sidebar - Root Categories */}
+        {/* Left Sidebar - Random 8 Root Categories */}
         <div className="w-1/4 border-r border-[#3a3a3a] dark:border-gray-300 pr-6">
-          <h3 className="font-bold font-lato text-sm tracking-wider text-gray-400 dark:text-gray-500 mb-4 px-3 uppercase">
-            Categories
-          </h3>
+          <div className="flex items-center justify-between mb-4 px-3">
+            <h3 className="font-bold font-lato text-sm tracking-wider text-gray-400 dark:text-gray-500 uppercase">
+              Categories
+            </h3>
+            <button
+              onClick={refreshRandomCategories}
+              className="p-1 text-gray-400 dark:text-gray-500 hover:text-orange-500 dark:hover:text-orange-600 transition-colors"
+              title="Refresh categories"
+            >
+              <svg
+                className="w-4 h-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                />
+              </svg>
+            </button>
+          </div>
           <div className="space-y-1">
-            {categories.map((category) => (
+            {randomCategories.map((category) => (
               <button
                 key={category._id}
                 onClick={() => {
@@ -165,10 +212,17 @@ const CategoriesDropdown = ({
             ))}
           </div>
 
+          {/* Show total categories count */}
+          {/* <div className="mt-4 px-3">
+            <p className="text-xs text-gray-500 dark:text-gray-400">
+              Showing {randomCategories.length} of {categories.length} categories
+            </p>
+          </div> */}
+
           <Link
             href="/all-categories"
             onClick={handleLinkClick}
-            className="flex items-center justify-between mt-6 px-3 py-2 text-sm text-gray-400 dark:text-gray-500 hover:text-blue-400 dark:hover:text-blue-600 font-medium border-t border-[#3a3a3a] dark:border-gray-300 pt-4 group"
+            className="flex items-center justify-between mt-4 px-3 py-2 text-sm text-gray-400 dark:text-gray-500 hover:text-blue-400 dark:hover:text-blue-600 font-medium border-t border-[#3a3a3a] dark:border-gray-300 pt-4 group"
           >
             <span>View All Categories</span>
             <svg
@@ -224,7 +278,7 @@ const CategoriesDropdown = ({
                   {activeCategory.subcategories.map((sub) => (
                     <Link
                       key={sub._id}
-                      href={`/${sub.name.toLowerCase().replace(/\s+/g, '')}/${sub._id}`}
+                      href={`/${sub.name.toLowerCase().replace(/\s+/g, "")}/${sub._id}`}
                       onClick={handleLinkClick}
                       className="p-4 rounded-lg bg-[#333333] dark:bg-gray-100 hover:bg-[#3a3a3a] dark:hover:bg-gray-200 transition-all duration-200 border border-[#3a3a3a] dark:border-gray-300 hover:border-blue-600/50 dark:hover:border-blue-400/50 group"
                     >
