@@ -97,7 +97,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose }) => {
                           <div className="flow-root">
                             <ul className="-my-6 divide-y divide-gray-800">
                               {items.map((item) => (
-                                <li key={item.id} className="flex py-6">
+                                <li key={item._id} className="flex py-6">
                                   <div className="h-24 w-24 flex-shrink-0 overflow-hidden rounded-md border border-gray-800 bg-[#252525]">
                                     {item.image ? (
                                       <img
@@ -131,7 +131,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose }) => {
                                         <button
                                           onClick={() =>
                                             handleUpdateQuantity(
-                                              item.id,
+                                              item._id,
                                               item.quantity - 1,
                                             )
                                           }
@@ -146,7 +146,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose }) => {
                                         <button
                                           onClick={() =>
                                             handleUpdateQuantity(
-                                              item.id,
+                                              item._id,
                                               item.quantity + 1,
                                             )
                                           }
@@ -158,7 +158,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose }) => {
                                       </div>
 
                                       <button
-                                        onClick={() => removeFromCart(item.id)}
+                                        onClick={() => removeFromCart(item._id)}
                                         className="text-gray-500 hover:text-red-500 transition-colors"
                                         disabled={isLoading}
                                       >
