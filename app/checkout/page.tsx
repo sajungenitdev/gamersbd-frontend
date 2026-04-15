@@ -277,7 +277,7 @@ export default function CheckoutPage() {
 
     // Prepare cart items for order - FIXED: Use _id or id
     const orderItems = items.map((item) => ({
-      product: item._id || item.id, // Works with both _id and id
+      product: item._id || item._id, // Works with both _id and id
       quantity: item.quantity,
       platform: item.platform || "PC",
       priceAtTime: item.price,
@@ -736,7 +736,7 @@ export default function CheckoutPage() {
               <div className="space-y-4 max-h-96 overflow-y-auto mb-4 pr-2">
                 {items.map((item) => (
                   <div
-                    key={item._id || item.id}
+                    key={item._id || item._id}
                     className="bg-black/20 rounded-lg p-3"
                   >
                     <div className="flex gap-3">
@@ -758,17 +758,17 @@ export default function CheckoutPage() {
                           <button
                             onClick={() =>
                               handleUpdateQuantity(
-                                item._id || item.id,
+                                item._id || item._id,
                                 item.quantity - 1,
                               )
                             }
-                            disabled={updatingItemId === (item._id || item.id)}
+                            disabled={updatingItemId === (item._id || item._id)}
                             className="p-1 bg-gray-700 hover:bg-gray-600 rounded text-white transition disabled:opacity-50"
                           >
                             <Minus className="w-3 h-3" />
                           </button>
                           <span className="text-white text-sm min-w-[30px] text-center">
-                            {updatingItemId === (item._id || item.id) ? (
+                            {updatingItemId === (item._id || item._id) ? (
                               <Loader2 className="w-3 h-3 animate-spin inline" />
                             ) : (
                               item.quantity
@@ -777,20 +777,20 @@ export default function CheckoutPage() {
                           <button
                             onClick={() =>
                               handleUpdateQuantity(
-                                item._id || item.id,
+                                item._id || item._id,
                                 item.quantity + 1,
                               )
                             }
-                            disabled={updatingItemId === (item._id || item.id)}
+                            disabled={updatingItemId === (item._id || item._id)}
                             className="p-1 bg-gray-700 hover:bg-gray-600 rounded text-white transition disabled:opacity-50"
                           >
                             <Plus className="w-3 h-3" />
                           </button>
                           <button
                             onClick={() =>
-                              handleRemoveItem(item._id || item.id)
+                              handleRemoveItem(item._id || item._id)
                             }
-                            disabled={updatingItemId === (item._id || item.id)}
+                            disabled={updatingItemId === (item._id || item._id)}
                             className="p-1 bg-red-500/20 hover:bg-red-500/30 rounded text-red-400 transition ml-2"
                           >
                             <Trash2 className="w-3 h-3" />

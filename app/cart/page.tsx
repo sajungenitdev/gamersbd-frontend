@@ -45,7 +45,7 @@ const CartPage = () => {
         <div className="lg:col-span-2 space-y-4">
           {items.map((item) => (
             <div 
-              key={item.id} 
+              key={item._id} 
               className="flex flex-col sm:flex-row items-center gap-6 p-5 bg-[#1a1a1a] rounded-xl border border-gray-800 group hover:border-gray-700 transition-all"
             >
               {/* Product Image */}
@@ -66,7 +66,7 @@ const CartPage = () => {
               {/* Quantity Controls */}
               <div className="flex items-center gap-4 bg-[#2a2a2a] rounded-lg p-1.5 border border-gray-700">
                 <button 
-                  onClick={() => updateQuantity(item.id, Math.max(1, item.quantity - 1))}
+                  onClick={() => updateQuantity(item._id, Math.max(1, item.quantity - 1))}
                   disabled={item.quantity <= 1}
                   className="p-1.5 text-gray-400 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
                 >
@@ -74,7 +74,7 @@ const CartPage = () => {
                 </button>
                 <span className="w-8 text-center font-medium text-white">{item.quantity}</span>
                 <button 
-                  onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                  onClick={() => updateQuantity(item._id, item.quantity + 1)}
                   className="p-1.5 text-gray-400 hover:text-white transition-colors"
                 >
                   <Plus size={18} />
@@ -83,7 +83,7 @@ const CartPage = () => {
 
               {/* Remove Button */}
               <button 
-                onClick={() => removeFromCart(item.id)}
+                onClick={() => removeFromCart(item._id)}
                 className="p-2 text-gray-500 hover:text-red-500 hover:bg-red-500/10 rounded-full transition-all"
                 title="Remove item"
               >
