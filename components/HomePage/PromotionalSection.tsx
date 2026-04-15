@@ -1,6 +1,7 @@
 // components/PromotionalSectionMinimal.tsx
 "use client";
 import { ArrowRightIcon } from "lucide-react";
+import Link from "next/link";
 import React from "react";
 
 const PromotionalSectionMinimal = () => {
@@ -31,9 +32,12 @@ const PromotionalSectionMinimal = () => {
             <p className="text-white dark:text-black mb-4">
               Get an Among Us-themed Fortnite Back Bling and Emote
             </p>
-            <button className="text-purple-600 dark:text-purple-400 font-medium flex items-center gap-1 hover:gap-2 transition-all">
+            <Link
+              href="/shop"
+              className="text-purple-600 dark:text-purple-400 font-medium flex items-center gap-1 hover:gap-2 transition-all"
+            >
               Learn More <ArrowRightIcon className="w-4 h-4" />
-            </button>
+            </Link>
           </div>
 
           {/* Rogue Company */}
@@ -59,9 +63,12 @@ const PromotionalSectionMinimal = () => {
             <p className="text-white dark:text-black mb-4">
               Receive a Rogue (Phantom), weapon wrap, and 20,000 XP for free!
             </p>
-            <button className="text-blue-600 dark:text-blue-400 font-medium flex items-center gap-1 hover:gap-2 transition-all">
+            <Link
+              href="/shop"
+              className="text-blue-600 dark:text-blue-400 font-medium flex items-center gap-1 hover:gap-2 transition-all"
+            >
               Learn More <ArrowRightIcon className="w-4 h-4" />
-            </button>
+            </Link>
           </div>
         </div>
       </div>

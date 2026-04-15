@@ -49,21 +49,21 @@ interface Product {
 
 interface Review {
   _id: string;
-  user: { 
+  user: {
     _id: string;
-    name: string; 
+    name: string;
     avatar?: string;
   };
   rating: number;
-  title?: string;  // Added title
+  title?: string;
   comment: string;
   images?: string[];
   isVerifiedPurchase?: boolean;
-  helpful?: {  // Added helpful property
+  helpful?: {
     count: number;
     users: string[];
   };
-  status?: 'pending' | 'approved' | 'rejected';
+  status?: "pending" | "approved" | "rejected";
   createdAt: string;
   updatedAt?: string;
 }
@@ -72,16 +72,16 @@ const ProductDetails = () => {
   const params = useParams();
   const router = useRouter();
   const { addToCart, isAddingProduct } = useCart();
-  const { 
-    wishlist, 
-    addToWishlist, 
-    removeFromWishlist, 
-    checkInWishlist, 
+  const {
+    wishlist,
+    addToWishlist,
+    removeFromWishlist,
+    checkInWishlist,
     refreshWishlist,
-    isLoading: wishlistLoading 
+    isLoading: wishlistLoading,
   } = useWishlist();
   const { user } = useUserAuth();
-  
+
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
   const [selectedImage, setSelectedImage] = useState(0);
@@ -96,15 +96,40 @@ const ProductDetails = () => {
   const [imageLoaded, setImageLoaded] = useState(false);
   const [wishlistItemId, setWishlistItemId] = useState<string | null>(null);
 
-  const productId = params?.id as string;
-  const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://gamersbd-server.onrender.com";
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
 
-  // Memoized values
-  const finalPrice = useMemo(() => product?.discountPrice || product?.price || 0, [product]);
+    if (diffMins < 60) {
+      return `${diffMins} ${diffMins === 1 ? "minute" : "minutes"} ago`;
+    } else if (diffHours < 24) {
+      return `${diffHours} ${diffHours === 1 ? "hour" : "hours"} ago`;
+    } else if (diffDays < 7) {
+      return `${diffDays} ${diffDays === 1 ? "day" : "days"} ago`;
+    } else {
+      return date.toLocaleDateString();
+    }
+  };
+
+  const productId = params?.id as string;
+  const API_URL =
+    process.env.NEXT_PUBLIC_API_URL || "https://gamersbd-server.onrender.com";
+
+  // Memoized values - add safety checks
+  const finalPrice = useMemo(
+    () => product?.discountPrice || product?.price || 0,
+    [product],
+  );
   const originalPrice = useMemo(() => product?.price || 0, [product]);
   const discount = useMemo(() => {
     if (product?.discountPrice && product.price > product.discountPrice) {
-      return Math.round(((product.price - product.discountPrice) / product.price) * 100);
+      return Math.round(
+        ((product.price - product.discountPrice) / product.price) * 100,
+      );
     }
     return 0;
   }, [product]);
@@ -134,9 +159,11 @@ const ProductDetails = () => {
         setLoading(true);
         setImageLoaded(false);
 
-        const response = await axios.get(`${API_URL}/api/products/${productId}`);
+        const response = await axios.get(
+          `${API_URL}/api/products/${productId}`,
+        );
 
-        if (response.data.success) {
+        if (response.data.success && response.data.data) {
           const productData = response.data.data;
           setProduct({
             ...productData,
@@ -163,16 +190,17 @@ const ProductDetails = () => {
     fetchProduct();
   }, [productId, API_URL, router]);
 
-  // Fetch related products
+  // Fetch related products - ADDED MORE SAFETY CHECKS
   useEffect(() => {
     const fetchRelatedProducts = async () => {
-      if (!product?._id) return;
+      // SAFETY CHECK: Ensure product exists and has _id
+      if (!product || !product._id) return;
 
       try {
         let categoryId = "";
-        if (typeof product.category === "object") {
+        if (product.category && typeof product.category === "object") {
           categoryId = product.category._id;
-        } else {
+        } else if (product.category && typeof product.category === "string") {
           categoryId = product.category;
         }
 
@@ -185,9 +213,9 @@ const ProductDetails = () => {
             },
           });
 
-          if (response.data.success) {
+          if (response.data.success && response.data.data) {
             const related = response.data.data.filter(
-              (p: Product) => p._id !== product._id
+              (p: Product) => p._id !== product._id,
             );
             setRelatedProducts(related.slice(0, 4));
             return;
@@ -198,7 +226,7 @@ const ProductDetails = () => {
           params: { limit: 4, exclude: product._id },
         });
 
-        if (fallbackResponse.data.success) {
+        if (fallbackResponse.data.success && fallbackResponse.data.data) {
           setRelatedProducts(fallbackResponse.data.data);
         }
       } catch (error) {
@@ -207,30 +235,47 @@ const ProductDetails = () => {
       }
     };
 
-    if (product) {
+    if (product && product._id) {
       fetchRelatedProducts();
     }
   }, [product, API_URL]);
 
-  // Fetch reviews
+  // Fetch reviews - ADDED SAFETY CHECK
+  // Replace your existing fetchReviews useEffect with this:
+
   useEffect(() => {
     const fetchReviews = async () => {
-      if (!product?._id) return;
+      if (!product || !product._id) return;
 
+      setIsLoadingReviews(true);
       try {
-        const response = await axios.get(`${API_URL}/api/reviews/product/${product._id}`);
+        const response = await axios.get(
+          `${API_URL}/api/reviews/product/${product._id}`,
+          {
+            timeout: 10000,
+            headers: { "Content-Type": "application/json" },
+          },
+        );
+
+        // Handle empty reviews properly
         if (response.data.success) {
-          setReviews(response.data.data);
+          setReviews(response.data.data || []); // Ensure it's always an array
         } else {
           setReviews([]);
         }
       } catch (error: any) {
         console.error("Failed to fetch reviews:", error);
-        setReviews([]);
+        // Don't show error toast for 404 or empty reviews
+        if (error.response?.status !== 404) {
+          toast.error("Failed to load reviews. Please try again later.");
+        }
+        setReviews([]); // Always set to empty array on error
+      } finally {
+        setIsLoadingReviews(false);
       }
     };
 
-    if (product && activeTab === "reviews") {
+    if (product && product._id && activeTab === "reviews") {
       fetchReviews();
     }
   }, [product, API_URL, activeTab]);
@@ -239,16 +284,15 @@ const ProductDetails = () => {
   useEffect(() => {
     const checkWishlistStatus = async () => {
       if (!user || !product?._id) return;
-      
+
       try {
-        // Refresh wishlist to get latest data
         await refreshWishlist();
       } catch (error) {
         console.error("Failed to refresh wishlist:", error);
       }
     };
 
-    if (product && user) {
+    if (product && product._id && user) {
       checkWishlistStatus();
     }
   }, [product, user, refreshWishlist]);
@@ -261,14 +305,16 @@ const ProductDetails = () => {
       return;
     }
 
-    const item = wishlist.items?.find((item: any) => item.product._id === product._id);
+    const item = wishlist.items?.find(
+      (item: any) => item.product?._id === product._id,
+    );
     setIsWishlisted(!!item);
     setWishlistItemId(item?._id || null);
   }, [wishlist, product]);
 
   const increaseQuantity = useCallback(() => {
     if (product && quantity < product.stock) {
-      setQuantity(prev => prev + 1);
+      setQuantity((prev) => prev + 1);
     } else {
       toast.error(`Only ${product?.stock} items available`);
     }
@@ -276,16 +322,21 @@ const ProductDetails = () => {
 
   const decreaseQuantity = useCallback(() => {
     if (quantity > 1) {
-      setQuantity(prev => prev - 1);
+      setQuantity((prev) => prev - 1);
     }
   }, [quantity]);
 
+  // In your ProductDetails component, the handleAddToWishlist function should be:
+
   const handleAddToWishlist = async () => {
-    if (!product) return;
-    
+    if (!product || !product._id) {
+      toast.error("Product not available");
+      return;
+    }
+
     if (!user) {
       toast.error("Please login to add to wishlist");
-      router.push("/login");
+      router.push("/auth");
       return;
     }
 
@@ -293,17 +344,24 @@ const ProductDetails = () => {
 
     try {
       if (isWishlisted && wishlistItemId) {
+        // Remove from wishlist
         const success = await removeFromWishlist(wishlistItemId);
         if (success) {
           setIsWishlisted(false);
           setWishlistItemId(null);
-          toast.success("Removed from wishlist");
         }
       } else {
+        // Add to wishlist - this will now work correctly
         const success = await addToWishlist(product._id);
         if (success) {
           setIsWishlisted(true);
-          toast.success("Added to wishlist");
+          // Get the new item ID from the updated wishlist
+          const newItem = wishlist?.items.find(
+            (item) => item.product._id === product._id,
+          );
+          if (newItem) {
+            setWishlistItemId(newItem._id);
+          }
         }
       }
     } catch (error: any) {
@@ -315,14 +373,17 @@ const ProductDetails = () => {
   };
 
   const handleShare = async () => {
+    // SAFETY CHECK
+    if (!product) return;
+
     const url = window.location.href;
     setIsSharing(true);
 
     try {
       if (navigator.share) {
         await navigator.share({
-          title: product?.name,
-          text: `Check out ${product?.name} on GamersBD!`,
+          title: product.name,
+          text: `Check out ${product.name} on GamersBD!`,
           url: url,
         });
       } else {
@@ -337,7 +398,8 @@ const ProductDetails = () => {
   };
 
   const handleBuyNow = async () => {
-    if (!product) return;
+    // SAFETY CHECK
+    if (!product || !product._id) return;
 
     const cartProduct = {
       _id: product._id,
@@ -359,10 +421,11 @@ const ProductDetails = () => {
         {[1, 2, 3, 4, 5].map((star) => (
           <Star
             key={star}
-            className={`w-4 h-4 ${star <= rating
-              ? "fill-yellow-500 text-yellow-500"
-              : "text-gray-600"
-              }`}
+            className={`w-4 h-4 ${
+              star <= rating
+                ? "fill-yellow-500 text-yellow-500"
+                : "text-gray-600"
+            }`}
           />
         ))}
       </div>
@@ -385,7 +448,9 @@ const ProductDetails = () => {
       <div className="min-h-screen bg-[#1a1a1a] flex items-center justify-center">
         <div className="text-center max-w-md mx-auto px-4">
           <div className="text-6xl mb-4">🔍</div>
-          <h2 className="text-2xl font-bold text-white mb-2">Product Not Found</h2>
+          <h2 className="text-2xl font-bold text-white mb-2">
+            Product Not Found
+          </h2>
           <p className="text-gray-400 mb-6">
             The product you're looking for doesn't exist or has been removed.
           </p>
@@ -401,9 +466,10 @@ const ProductDetails = () => {
     );
   }
 
-  const averageRating = reviews.length > 0
-    ? reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length
-    : product.rating || 0;
+  const averageRating =
+    reviews.length > 0
+      ? reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length
+      : product.rating || 0;
 
   return (
     <div className="min-h-screen bg-[#1a1a1a]">
@@ -416,7 +482,10 @@ const ProductDetails = () => {
             Home
           </Link>
           <ChevronRight className="w-4 h-4" />
-          <Link href="/shop" className="hover:text-purple-400 transition-colors">
+          <Link
+            href="/shop"
+            className="hover:text-purple-400 transition-colors"
+          >
             Shop
           </Link>
           {categoryName !== "Product" && (
@@ -447,8 +516,9 @@ const ProductDetails = () => {
               <img
                 src={product.images?.[selectedImage] || "/placeholder.png"}
                 alt={product.name}
-                className={`w-full h-full object-cover transition-opacity duration-300 ${imageLoaded ? "opacity-100" : "opacity-0"
-                  }`}
+                className={`w-full h-full object-cover transition-opacity duration-300 ${
+                  imageLoaded ? "opacity-100" : "opacity-0"
+                }`}
                 onLoad={() => setImageLoaded(true)}
               />
               {discount > 0 && (
@@ -468,10 +538,11 @@ const ProductDetails = () => {
                       setSelectedImage(index);
                       setImageLoaded(false);
                     }}
-                    className={`relative w-20 h-20 rounded-lg overflow-hidden border-2 transition-all flex-shrink-0 ${selectedImage === index
-                      ? "border-purple-500"
-                      : "border-gray-700 hover:border-gray-500"
-                      }`}
+                    className={`relative w-20 h-20 rounded-lg overflow-hidden border-2 transition-all flex-shrink-0 ${
+                      selectedImage === index
+                        ? "border-purple-500"
+                        : "border-gray-700 hover:border-gray-500"
+                    }`}
                   >
                     <img
                       src={img}
@@ -508,7 +579,9 @@ const ProductDetails = () => {
                 </span>
               </div>
               {product.sku && (
-                <span className="text-sm text-gray-500">SKU: {product.sku}</span>
+                <span className="text-sm text-gray-500">
+                  SKU: {product.sku}
+                </span>
               )}
             </div>
 
@@ -625,7 +698,9 @@ const ProductDetails = () => {
                 {isAddingToWishlist ? (
                   <Loader2 className="w-4 h-4 animate-spin" />
                 ) : (
-                  <Heart className={`w-4 h-4 ${isWishlisted ? "fill-red-500 text-red-500" : ""}`} />
+                  <Heart
+                    className={`w-4 h-4 ${isWishlisted ? "fill-red-500 text-red-500" : ""}`}
+                  />
                 )}
                 {isWishlisted ? "Wishlisted" : "Add to Wishlist"}
               </button>
@@ -658,7 +733,9 @@ const ProductDetails = () => {
                   <Shield className="w-5 h-5 flex-shrink-0" />
                   <div>
                     <p className="text-sm font-medium">2 Year Warranty</p>
-                    <p className="text-xs text-gray-500">Manufacturer warranty</p>
+                    <p className="text-xs text-gray-500">
+                      Manufacturer warranty
+                    </p>
                   </div>
                 </div>
                 <div className="flex items-center gap-3 text-gray-400">
@@ -687,12 +764,15 @@ const ProductDetails = () => {
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
-                className={`pb-3 text-lg font-medium capitalize transition-colors whitespace-nowrap ${activeTab === tab
-                  ? "text-purple-400 border-b-2 border-purple-400"
-                  : "text-gray-400 hover:text-white"
-                  }`}
+                className={`pb-3 text-lg font-medium capitalize transition-colors whitespace-nowrap ${
+                  activeTab === tab
+                    ? "text-purple-400 border-b-2 border-purple-400"
+                    : "text-gray-400 hover:text-white"
+                }`}
               >
-                {tab} {tab === "reviews" && `(${reviews.length || product.reviews || 0})`}
+                {tab}{" "}
+                {tab === "reviews" &&
+                  `(${reviews.length || product.reviews || 0})`}
               </button>
             ))}
           </div>
@@ -701,7 +781,8 @@ const ProductDetails = () => {
             {activeTab === "description" && (
               <div className="space-y-4">
                 <p className="text-gray-300 leading-relaxed whitespace-pre-wrap">
-                  {product.description || "No description available for this product."}
+                  {product.description ||
+                    "No description available for this product."}
                 </p>
                 {product.tags && product.tags.length > 0 && (
                   <div className="flex flex-wrap gap-2 pt-4">
@@ -721,30 +802,48 @@ const ProductDetails = () => {
             {activeTab === "specifications" && (
               <div className="space-y-2">
                 <div className="flex flex-col sm:flex-row gap-4 py-3 border-b border-gray-800">
-                  <span className="sm:w-32 text-gray-400 font-medium">Platform:</span>
+                  <span className="sm:w-32 text-gray-400 font-medium">
+                    Platform:
+                  </span>
                   <span className="text-white">
-                    {product.platform?.length ? product.platform.join(", ") : "All Platforms"}
+                    {product.platform?.length
+                      ? product.platform.join(", ")
+                      : "All Platforms"}
                   </span>
                 </div>
                 <div className="flex flex-col sm:flex-row gap-4 py-3 border-b border-gray-800">
-                  <span className="sm:w-32 text-gray-400 font-medium">Category:</span>
+                  <span className="sm:w-32 text-gray-400 font-medium">
+                    Category:
+                  </span>
                   <span className="text-white">{categoryName}</span>
                 </div>
                 <div className="flex flex-col sm:flex-row gap-4 py-3 border-b border-gray-800">
-                  <span className="sm:w-32 text-gray-400 font-medium">Stock Status:</span>
-                  <span className={product.inStock ? "text-green-500" : "text-red-500"}>
-                    {product.inStock ? `${product.stock} units available` : "Out of Stock"}
+                  <span className="sm:w-32 text-gray-400 font-medium">
+                    Stock Status:
+                  </span>
+                  <span
+                    className={
+                      product.inStock ? "text-green-500" : "text-red-500"
+                    }
+                  >
+                    {product.inStock
+                      ? `${product.stock} units available`
+                      : "Out of Stock"}
                   </span>
                 </div>
                 {product.brand && (
                   <div className="flex flex-col sm:flex-row gap-4 py-3 border-b border-gray-800">
-                    <span className="sm:w-32 text-gray-400 font-medium">Brand:</span>
+                    <span className="sm:w-32 text-gray-400 font-medium">
+                      Brand:
+                    </span>
                     <span className="text-white">{product.brand}</span>
                   </div>
                 )}
                 {product.sku && (
                   <div className="flex flex-col sm:flex-row gap-4 py-3">
-                    <span className="sm:w-32 text-gray-400 font-medium">SKU:</span>
+                    <span className="sm:w-32 text-gray-400 font-medium">
+                      SKU:
+                    </span>
                     <span className="text-white">{product.sku}</span>
                   </div>
                 )}
@@ -757,12 +856,12 @@ const ProductDetails = () => {
                   <div className="flex justify-center py-12">
                     <Loader2 className="w-8 h-8 text-purple-500 animate-spin" />
                   </div>
-                ) : reviews.length === 0 ? (
+                ) : !reviews || reviews.length === 0 ? (
                   <div className="text-center py-12 bg-[#2A2A2A] rounded-xl">
                     <AlertCircle className="w-12 h-12 text-gray-500 mx-auto mb-4" />
                     <p className="text-gray-400 mb-4">No reviews yet.</p>
                     <Link
-                      href={`/product/${product._id}/review`}
+                      href={`/product/${productId}/review`}
                       className="inline-flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition"
                     >
                       Be the first to review
@@ -781,7 +880,7 @@ const ProductDetails = () => {
                         </p>
                       </div>
                       <Link
-                        href={`/product/${product._id}/review`}
+                        href={`/product/${productId}/review`}
                         className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition"
                       >
                         Write a Review
@@ -790,32 +889,131 @@ const ProductDetails = () => {
 
                     <div className="space-y-4">
                       {reviews.map((review) => (
-                        <div key={review._id} className="p-4 bg-[#2A2A2A] rounded-xl">
+                        <div
+                          key={review._id}
+                          className="p-4 bg-[#2A2A2A] rounded-xl"
+                        >
                           <div className="flex items-center justify-between mb-2 flex-wrap gap-2">
                             <div className="flex items-center gap-3">
                               <div className="w-10 h-10 rounded-full bg-purple-600 flex items-center justify-center">
                                 <span className="text-white font-bold">
-                                  {review.user.name.charAt(0).toUpperCase()}
+                                  {review.user?.name
+                                    ?.charAt(0)
+                                    ?.toUpperCase() || "U"}
                                 </span>
                               </div>
                               <div>
-                                <p className="text-white font-medium">{review.user.name}</p>
+                                <div className="flex items-center gap-2">
+                                  <p className="text-white font-medium">
+                                    {review.user?.name || "Anonymous User"}
+                                  </p>
+                                  {review.isVerifiedPurchase && (
+                                    <span className="text-xs bg-green-500/20 text-green-400 px-2 py-0.5 rounded-full">
+                                      Verified Purchase
+                                    </span>
+                                  )}
+                                </div>
                                 {renderStars(review.rating)}
                               </div>
                             </div>
                             <span className="text-sm text-gray-500">
-                              {new Date(review.createdAt).toLocaleDateString()}
+                              {formatDate(review.createdAt)}
                             </span>
                           </div>
+
                           {review.title && (
-                            <h4 className="text-white font-semibold mt-2">{review.title}</h4>
+                            <h4 className="text-white font-semibold mt-2">
+                              {review.title}
+                            </h4>
                           )}
+
                           <p className="text-gray-300 mt-2">{review.comment}</p>
-                          {review.helpful && (
-                            <div className="flex items-center gap-2 mt-3">
-                              <button className="text-xs text-gray-500 hover:text-purple-400 transition">
-                                Helpful ({review.helpful.count})
-                              </button>
+
+                          {/* Display images - FIXED: Check if images exist and are valid */}
+                          {review.images &&
+                            Array.isArray(review.images) &&
+                            review.images.length > 0 && (
+                              <div className="flex gap-2 mt-3 overflow-x-auto pb-2">
+                                {review.images.map((img, idx) =>
+                                  img &&
+                                  typeof img === "string" &&
+                                  img.startsWith("data:image") ? (
+                                    <img
+                                      key={idx}
+                                      src={img}
+                                      alt={`Review image ${idx + 1}`}
+                                      className="w-20 h-20 rounded-lg object-cover cursor-pointer hover:opacity-80 transition border border-gray-600"
+                                      onClick={() => window.open(img, "_blank")}
+                                    />
+                                  ) : img &&
+                                    typeof img === "string" &&
+                                    img.startsWith("http") ? (
+                                    <img
+                                      key={idx}
+                                      src={img}
+                                      alt={`Review image ${idx + 1}`}
+                                      className="w-20 h-20 rounded-lg object-cover cursor-pointer hover:opacity-80 transition border border-gray-600"
+                                      onClick={() => window.open(img, "_blank")}
+                                    />
+                                  ) : null,
+                                )}
+                              </div>
+                            )}
+
+                          {/* Helpful Button */}
+                          <div className="flex items-center gap-2 mt-3">
+                            <button
+                              onClick={async () => {
+                                try {
+                                  const token = localStorage.getItem("token");
+                                  if (!token) {
+                                    toast.error(
+                                      "Please login to mark as helpful",
+                                    );
+                                    return;
+                                  }
+
+                                  await axios.post(
+                                    `${API_URL}/api/reviews/${review._id}/helpful`,
+                                    {},
+                                    {
+                                      headers: {
+                                        Authorization: `Bearer ${token}`,
+                                      },
+                                    },
+                                  );
+                                  toast.success("Thanks for your feedback!");
+
+                                  // Refresh reviews
+                                  const response = await axios.get(
+                                    `${API_URL}/api/reviews/product/${product._id}`,
+                                  );
+                                  if (response.data.success) {
+                                    setReviews(response.data.data);
+                                  }
+                                } catch (error: any) {
+                                  console.error(
+                                    "Failed to mark helpful:",
+                                    error,
+                                  );
+                                  if (error.response?.status === 401) {
+                                    toast.error(
+                                      "Please login to mark as helpful",
+                                    );
+                                  } else {
+                                    toast.error("Failed to mark as helpful");
+                                  }
+                                }
+                              }}
+                              className="text-xs text-gray-500 hover:text-purple-400 transition"
+                            >
+                              Helpful ({review.helpful?.count || 0})
+                            </button>
+                          </div>
+
+                          {review.status === "pending" && (
+                            <div className="mt-2 text-xs text-yellow-500">
+                              Review pending moderation
                             </div>
                           )}
                         </div>
@@ -832,7 +1030,9 @@ const ProductDetails = () => {
         {relatedProducts.length > 0 && (
           <div>
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-bold text-white">You May Also Like</h2>
+              <h2 className="text-2xl font-bold text-white">
+                You May Also Like
+              </h2>
               <Link
                 href={`/category/${categorySlug || categoryName.toLowerCase()}`}
                 className="text-purple-400 hover:text-purple-300 transition-colors flex items-center gap-1"
@@ -843,9 +1043,14 @@ const ProductDetails = () => {
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
               {relatedProducts.map((related) => {
-                const relatedFinalPrice = related.discountPrice || related.price;
+                const relatedFinalPrice =
+                  related.discountPrice || related.price;
                 const relatedDiscount = related.discountPrice
-                  ? Math.round(((related.price - related.discountPrice) / related.price) * 100)
+                  ? Math.round(
+                      ((related.price - related.discountPrice) /
+                        related.price) *
+                        100,
+                    )
                   : 0;
 
                 return (

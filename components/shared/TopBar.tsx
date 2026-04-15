@@ -13,7 +13,11 @@ import { useCurrency } from "../../app/contact/CurrencyContext";
 const TopBar = () => {
   const { user } = useUserAuth();
   const { totalItems, isLoading } = useCart();
-  const { wishlist, refreshWishlist } = useWishlist();
+  const {
+    wishlist,
+    refreshWishlist,
+    isLoading: wishlistLoading,
+  } = useWishlist();
   const { currency, setCurrency, formatPrice } = useCurrency();
   const [cartCount, setCartCount] = useState(0);
   const [wishlistCount, setWishlistCount] = useState(0);
@@ -37,20 +41,36 @@ const TopBar = () => {
     setCartCount(totalItems);
   }, [totalItems]);
 
-  // Update wishlist count
+  // Update wishlist count - FIXED: Properly track wishlist items
   useEffect(() => {
-    if (wishlist) {
-      setWishlistCount(wishlist.totalItems || 0);
+    if (wishlist && wishlist.items) {
+      setWishlistCount(wishlist.totalItems || wishlist.items.length || 0);
     } else {
       setWishlistCount(0);
     }
   }, [wishlist]);
 
-  // Refresh wishlist when user logs in
+  // Refresh wishlist when user logs in or when component mounts
   useEffect(() => {
     if (user) {
       refreshWishlist();
     }
+  }, [user, refreshWishlist]);
+
+  // Listen for wishlist update events (for real-time updates)
+  useEffect(() => {
+    const handleWishlistUpdate = () => {
+      if (user) {
+        refreshWishlist();
+      }
+    };
+
+    // Listen for custom event when wishlist is updated from other components
+    window.addEventListener("wishlist-updated", handleWishlistUpdate);
+
+    return () => {
+      window.removeEventListener("wishlist-updated", handleWishlistUpdate);
+    };
   }, [user, refreshWishlist]);
 
   // Handle drawer visibility based on hover state
@@ -83,16 +103,28 @@ const TopBar = () => {
       <div className="bg-[#2a2a2a] dark:bg-gray-100 text-gray-100 dark:text-gray-900 relative z-10">
         <div className="max-w-7xl mx-auto py-2 flex flex-wrap items-center justify-between font-sans text-[13px] tracking-wide">
           <div className="flex items-center gap-3 sm:gap-4 flex-wrap font-lato">
-            <Link href="/shop" className="hover:text-[#e87831] transition-colors uppercase font-medium">
+            <Link
+              href="/shop"
+              className="hover:text-[#e87831] transition-colors uppercase font-medium"
+            >
               Store
             </Link>
-            <Link href="/track-order" className="hover:text-[#e87831] transition-colors uppercase font-medium">
+            <Link
+              href="/track-order"
+              className="hover:text-[#e87831] transition-colors uppercase font-medium"
+            >
               Track Order
             </Link>
-            <Link href="/about" className="hover:text-[#e87831] transition-colors uppercase font-medium">
+            <Link
+              href="/about"
+              className="hover:text-[#e87831] transition-colors uppercase font-medium"
+            >
               About GB
             </Link>
-            <Link href="/contact" className="hover:text-[#e87831] transition-colors uppercase font-medium">
+            <Link
+              href="/contact"
+              className="hover:text-[#e87831] transition-colors uppercase font-medium"
+            >
               Contact
             </Link>
           </div>
@@ -101,18 +133,30 @@ const TopBar = () => {
             {!user ? (
               <div className="flex items-center gap-1 sm:gap-2 pr-2 sm:pr-3 border-r border-gray-700">
                 <User size={16} className="text-gray-400" />
-                <Link href="/auth" className="hover:text-[#e87831] whitespace-nowrap">
+                <Link
+                  href="/auth"
+                  className="hover:text-[#e87831] whitespace-nowrap"
+                >
                   Sign in
                 </Link>
               </div>
             ) : (
               <div className="flex items-center gap-2 pr-2 sm:pr-3 border-r border-gray-700">
-                <Link href="/dashboard" className="flex items-center gap-2 group">
+                <Link
+                  href="/dashboard"
+                  className="flex items-center gap-2 group"
+                >
                   <div className="w-7 h-7 rounded-full bg-gradient-to-r from-purple-500 to-indigo-500 flex items-center justify-center overflow-hidden">
                     {user.avatar ? (
-                      <img src={user.avatar} alt={user.name} className="w-full h-full object-cover" />
+                      <img
+                        src={user.avatar}
+                        alt={user.name}
+                        className="w-full h-full object-cover"
+                      />
                     ) : (
-                      <span className="text-white text-xs font-semibold">{getUserInitials()}</span>
+                      <span className="text-white text-xs font-semibold">
+                        {getUserInitials()}
+                      </span>
                     )}
                   </div>
                   <span className="hidden sm:inline text-sm hover:text-[#e87831] transition-colors">
@@ -122,11 +166,31 @@ const TopBar = () => {
               </div>
             )}
 
-            <Link href="/wishlist" className="flex items-center gap-1 pr-2 sm:pr-3 border-r border-gray-700 relative group">
-              <Heart size={18} strokeWidth={1.5} className="text-gray-400 group-hover:text-[#e87831] transition-colors" />
-              <span className="bg-red-600 text-white text-[10px] font-bold rounded-full h-4 w-4 flex items-center justify-center absolute -top-1 -right-1 me-2">
-                {wishlistCount > 0 ? wishlistCount : 0}
-              </span>
+            {/* Wishlist Link with proper count */}
+            <Link
+              href="/wishlist"
+              className="flex items-center gap-1 pr-2 sm:pr-3 border-r border-gray-700 relative group"
+              onClick={() => {
+                // Refresh wishlist when clicking on the link to ensure latest data
+                if (user) {
+                  refreshWishlist();
+                }
+              }}
+            >
+              <Heart
+                size={18}
+                strokeWidth={1.5}
+                className="text-gray-400 group-hover:text-[#e87831] transition-colors"
+              />
+              {wishlistCount > 0 && (
+                <span className="bg-red-600 text-white text-[10px] font-bold rounded-full min-w-[16px] h-4 px-1 flex items-center justify-center absolute -top-1 -right-1">
+                  {wishlistLoading
+                    ? "..."
+                    : wishlistCount > 99
+                      ? "99+"
+                      : wishlistCount}
+                </span>
+              )}
             </Link>
 
             {/* Cart Button */}
@@ -138,9 +202,13 @@ const TopBar = () => {
                 onClick={handleCartClick}
                 className="flex items-center gap-1 pr-2 sm:pr-3 border-r border-gray-700 relative group"
               >
-                <ShoppingCart size={18} strokeWidth={1.5} className="text-gray-400 group-hover:text-[#e87831] transition-colors" />
-                <span className="bg-red-600 text-white text-[10px] font-bold rounded-full h-4 w-4 flex items-center justify-center absolute -top-1 -right-1 me-2">
-                  {isLoading ? "..." : cartCount}
+                <ShoppingCart
+                  size={18}
+                  strokeWidth={1.5}
+                  className="text-gray-400 group-hover:text-[#e87831] transition-colors"
+                />
+                <span className="bg-red-600 text-white text-[10px] font-bold rounded-full h-4 min-w-[16px] px-1 flex items-center justify-center absolute -top-1 -right-1">
+                  {isLoading ? "..." : cartCount > 99 ? "99+" : cartCount}
                 </span>
               </button>
             </div>

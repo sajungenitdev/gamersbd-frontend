@@ -17,6 +17,12 @@ const nextConfig: NextConfig = {
         port: "",
         pathname: "/**",
       },
+      {
+        protocol: "https",
+        hostname: "gamersbd-server.onrender.com",
+        port: "",
+        pathname: "/**",
+      },
     ],
   },
 };

@@ -1,6 +1,7 @@
 // components/CatalougeSection.tsx
 "use client";
 import { ArrowRightIcon, SparklesIcon } from "lucide-react";
+import Link from "next/link";
 
 const CatalougeSection = () => {
   return (
@@ -45,15 +46,21 @@ const CatalougeSection = () => {
 
             {/* Buttons */}
             <div className="flex flex-wrap gap-4 pt-4">
-              <button className="group px-8 py-4 bg-gradient-to-r from-[#d88616] to-pink-600 text-white rounded-xl font-semibold flex items-center gap-2 hover:gap-3 transition-all hover:shadow-lg hover:shadow-[#d88616]/25">
+              <Link
+                href="/categories"
+                className="group px-8 py-4 bg-gradient-to-r from-[#d88616] to-pink-600 text-white rounded-xl font-semibold flex items-center gap-2 hover:gap-3 transition-all hover:shadow-lg hover:shadow-[#d88616]/25"
+              >
                 Go to Catalog
                 <ArrowRightIcon className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-              </button>
+              </Link>
 
-              <button className="group px-8 py-4 bg-gray-800 dark:bg-gray-200 text-white dark:text-gray-900 rounded-xl font-semibold flex items-center gap-2 hover:bg-gray-700 dark:hover:bg-gray-300 transition-all">
+              <Link
+                href="/shop"
+                className="group px-8 py-4 bg-gray-800 dark:bg-gray-200 text-white dark:text-gray-900 rounded-xl font-semibold flex items-center gap-2 hover:bg-gray-700 dark:hover:bg-gray-300 transition-all"
+              >
                 Shop Now
                 <ArrowRightIcon className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-              </button>
+              </Link>
             </div>
 
             {/* Trust Badges */}

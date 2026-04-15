@@ -4,82 +4,106 @@ import {
   ChevronLeftIcon,
   ChevronRightIcon,
   ShoppingCartIcon,
+  Loader2,
 } from "lucide-react";
 import React, { useState, useRef, useEffect } from "react";
+import Link from "next/link";
+import { toast } from "react-hot-toast";
+import { useCart } from "../../app/contexts/CartContext";
 
-// Sample product data based on your image
-const products = [
-  {
-    id: 1,
-    name: "Baseball Cap",
-    category: "Contemporary",
-    price: 864,
-    originalPrice: 950,
-    image:
-      "https://gamersbd.com/wp-content/uploads/2022/06/b4dc4-24-2-300x375.jpg",
-  },
-  {
-    id: 2,
-    name: "Crew Sweatshirt",
-    category: "Casual",
-    price: 650,
-    originalPrice: 780,
-    image:
-      "https://gamersbd.com/wp-content/uploads/2016/01/egs-cyberpunk2077-cdprojektred-g1a-13-02-24-22-1920x1080-dd4dcc601c17-300x375.jpg",
-  },
-  {
-    id: 3,
-    name: "Crochet Cardigan",
-    category: "Contemporary",
-    price: 520,
-    originalPrice: 620,
-    image:
-      "https://gamersbd.com/wp-content/uploads/2016/03/egs-cyberpunk2077-cdprojektred-g1a-03-1920x1080-c25ac94167df-300x375.jpg",
-  },
-  {
-    id: 4,
-    name: "Band Collar",
-    category: "Formal",
-    price: 720,
-    originalPrice: 850,
-    image:
-      "https://gamersbd.com/wp-content/uploads/2015/12/egs-finalfantasyviiremakeintergrade-squareenix-g1a-01-1920x1080-05bc7f9ce725-300x375.jpg",
-  },
-  {
-    id: 5,
-    name: "Denim Jacket",
-    category: "Casual",
-    price: 1200,
-    originalPrice: 1500,
-    image:
-      "https://gamersbd.com/wp-content/uploads/2022/06/b4dc4-24-2-300x375.jpg",
-  },
-  {
-    id: 6,
-    name: "Graphic Tee",
-    category: "Streetwear",
-    price: 450,
-    originalPrice: 550,
-    image:
-      "https://gamersbd.com/wp-content/uploads/2016/01/egs-cyberpunk2077-cdprojektred-g1a-13-02-24-22-1920x1080-dd4dcc601c17-300x375.jpg",
-  },
-];
+// Product type based on your API response
+interface Product {
+  _id: string;
+  id: string;
+  name: string;
+  description: string;
+  shortDescription: string;
+  price: number;
+  discountPrice: number;
+  currency: string;
+  category: {
+    _id: string;
+    name: string;
+  };
+  brand: string;
+  mainImage: string;
+  images: string[];
+  stock: number;
+  availability: string;
+  type: string;
+  offerType: "featured" | "sale" | "new" | "none";
+  isFeatured: boolean;
+  offerBadge: string;
+  offerBadgeColor: string;
+  isOnSale: boolean;
+  discountPercentage: number;
+  rating: string;
+  isActive: boolean;
+  soldCount: number;
+  finalPrice: number;
+  offerDisplay: {
+    type: string;
+    badge: string;
+    color: string;
+    priority: number;
+  };
+}
 
 const ProductSlider = () => {
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [touchStart, setTouchStart] = useState(0);
   const [touchEnd, setTouchEnd] = useState(0);
   const [itemsToShow, setItemsToShow] = useState(4);
-  const [imagesLoaded, setImagesLoaded] = useState<{ [key: number]: boolean }>(
+  const [imagesLoaded, setImagesLoaded] = useState<{ [key: string]: boolean }>(
     {},
   );
-  const [imageErrors, setImageErrors] = useState<{ [key: number]: boolean }>(
+  const [imageErrors, setImageErrors] = useState<{ [key: string]: boolean }>(
     {},
   );
   const [loadingTimeout, setLoadingTimeout] = useState<{
-    [key: number]: boolean;
+    [key: string]: boolean;
   }>({});
+  const [addingToCart, setAddingToCart] = useState<string | null>(null);
   const sliderRef = useRef<HTMLDivElement>(null);
+
+  // Get cart context
+  const { addToCart } = useCart();
+
+  const API_URL =
+    process.env.NEXT_PUBLIC_API_URL || "https://gamersbd-server.onrender.com";
+
+  // Fetch products from API
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        setLoading(true);
+        const response = await fetch(`${API_URL}/api/products`);
+        if (!response.ok) {
+          throw new Error(`Failed to fetch: ${response.status}`);
+        }
+        const data = await response.json();
+
+        // Filter products that are on sale (isOnSale === true)
+        const saleProducts = data.data.filter(
+          (product: Product) => product.isOnSale === true,
+        );
+
+        setProducts(saleProducts);
+        setLoading(false);
+      } catch (err) {
+        console.error("Error fetching products:", err);
+        setError(
+          err instanceof Error ? err.message : "Failed to load products",
+        );
+        setLoading(false);
+      }
+    };
+
+    fetchProducts();
+  }, [API_URL]);
 
   const getItemsPerView = () => {
     if (typeof window !== "undefined") {
@@ -114,13 +138,13 @@ const ProductSlider = () => {
       const timer = setTimeout(() => {
         if (!imagesLoaded[product.id] && !imageErrors[product.id]) {
           setLoadingTimeout((prev) => ({ ...prev, [product.id]: true }));
-          setImagesLoaded((prev) => ({ ...prev, [product.id]: true })); // Force mark as loaded
+          setImagesLoaded((prev) => ({ ...prev, [product.id]: true }));
         }
-      }, 5000); // 5 second timeout
+      }, 5000);
 
       return () => clearTimeout(timer);
     });
-  }, [imagesLoaded, imageErrors]);
+  }, [products, imagesLoaded, imageErrors]);
 
   const nextSlide = () => {
     setCurrentIndex((prev) => Math.min(prev + 1, maxIndex));
@@ -141,49 +165,162 @@ const ProductSlider = () => {
 
   const handleTouchEnd = () => {
     if (touchStart - touchEnd > 75) {
-      // Swipe left
       nextSlide();
     }
     if (touchStart - touchEnd < -75) {
-      // Swipe right
       prevSlide();
     }
   };
 
-  const handleImageLoad = (productId: number) => {
+  const handleImageLoad = (productId: string) => {
     setImagesLoaded((prev) => ({ ...prev, [productId]: true }));
-    console.log(`Image ${productId} loaded successfully`);
   };
 
-  const handleImageError = (productId: number) => {
+  const handleImageError = (productId: string) => {
     setImageErrors((prev) => ({ ...prev, [productId]: true }));
-    setImagesLoaded((prev) => ({ ...prev, [productId]: true })); // Mark as loaded to hide spinner
-    console.log(`Image ${productId} failed to load`);
+    setImagesLoaded((prev) => ({ ...prev, [productId]: true }));
   };
 
-  const calculateDiscount = (price: number, originalPrice: number) => {
-    return Math.round(((originalPrice - price) / originalPrice) * 100);
+  const handleAddToCart = async (product: Product, e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    const availableStock = product.stock ?? 0;
+    if (availableStock <= 0) {
+      toast.error("Out of stock");
+      return;
+    }
+
+    setAddingToCart(product.id);
+
+    const cartProduct = {
+      _id: product._id,
+      name: product.name,
+      price: product.finalPrice || product.price,
+      inStock: availableStock > 0,
+      image: product.mainImage || product.images?.[0] || "",
+      quantity: 1,
+    };
+
+    const success = await addToCart(cartProduct, 1);
+
+    if (success) {
+      toast.success("Added to cart!");
+    } else {
+      toast.error("Failed to add to cart");
+    }
+
+    setAddingToCart(null);
   };
 
-  // Preload images on component mount
+  const calculateDiscount = (product: Product) => {
+    if (product.discountPercentage > 0) {
+      return product.discountPercentage;
+    }
+    if (product.isOnSale && product.finalPrice < product.price) {
+      return Math.round(
+        ((product.price - product.finalPrice) / product.price) * 100,
+      );
+    }
+    return 0;
+  };
+
+  const getProductImage = (product: Product) => {
+    return product.mainImage || product.images?.[0] || "/placeholder.jpg";
+  };
+
+  // Preload images
   useEffect(() => {
     products.forEach((product) => {
       const img = new Image();
-      img.src = product.image;
+      img.src = getProductImage(product);
       img.onload = () => handleImageLoad(product.id);
       img.onerror = () => handleImageError(product.id);
     });
-  }, []);
+  }, [products]);
+
+  if (loading) {
+    return (
+      <section className="py-12 bg-[#1a1a1a] dark:bg-white transition-colors duration-300">
+        <div className="max-w-7xl mx-auto px-4">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-8 gap-4">
+            <div>
+              <h2 className="text-3xl md:text-4xl text-white dark:text-black">
+                MEGA Sale Spotlight
+              </h2>
+            </div>
+          </div>
+          <div className="flex justify-center items-center h-96">
+            <div className="text-center">
+              <Loader2 className="w-12 h-12 text-orange-500 animate-spin mx-auto mb-4" />
+              <p className="text-gray-400 dark:text-gray-600">
+                Loading products...
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  if (error) {
+    return (
+      <section className="py-12 bg-[#1a1a1a] dark:bg-white transition-colors duration-300">
+        <div className="max-w-7xl mx-auto px-4">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-8 gap-4">
+            <div>
+              <h2 className="text-3xl md:text-4xl text-white dark:text-black">
+                MEGA Sale Spotlight
+              </h2>
+            </div>
+          </div>
+          <div className="text-center py-12">
+            <p className="text-red-500">Error loading products: {error}</p>
+            <button
+              onClick={() => window.location.reload()}
+              className="mt-4 px-4 py-2 bg-orange-500 text-white rounded-lg"
+            >
+              Retry
+            </button>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  if (products.length === 0) {
+    return (
+      <section className="py-12 bg-[#1a1a1a] dark:bg-white transition-colors duration-300">
+        <div className="max-w-7xl mx-auto px-4">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-8 gap-4">
+            <div>
+              <h2 className="text-3xl md:text-4xl text-white dark:text-black">
+                MEGA Sale Spotlight
+              </h2>
+            </div>
+          </div>
+          <div className="text-center py-12">
+            <p className="text-gray-400 dark:text-gray-600">
+              No sale products available at the moment.
+            </p>
+          </div>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section className="py-12 bg-[#1a1a1a] dark:bg-white transition-colors duration-300">
-      <div className="max-w-7xl mx-auto">
+      <div className="max-w-7xl mx-auto px-4">
         {/* Header */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-8 gap-4">
           <div>
             <h2 className="text-3xl md:text-4xl text-white dark:text-black">
               MEGA Sale Spotlight
             </h2>
+            <p className="text-gray-400 dark:text-gray-600 mt-1">
+              Don't miss out on these amazing deals!
+            </p>
           </div>
 
           {/* Navigation Buttons */}
@@ -229,154 +366,186 @@ const ProductSlider = () => {
               transform: `translateX(-${currentIndex * (100 / itemsToShow)}%)`,
             }}
           >
-            {products.map((product) => (
-              <div
-                key={product.id}
-                className="flex-shrink-0 w-full"
-                style={{
-                  flexBasis: `calc(${100 / itemsToShow}% - ${
-                    itemsToShow > 1 ? (24 * (itemsToShow - 1)) / itemsToShow : 0
-                  }px)`,
-                }}
-              >
-                <div className="relative group overflow-hidden rounded-2xl transition-all duration-300">
-                  {/* Product Image with Loading State */}
-                  <div className="relative w-full aspect-square overflow-hidden rounded-2xl bg-gray-800 dark:bg-gray-200">
-                    {/* Loading Spinner - Show only if not loaded and no error and no timeout */}
-                    {!imagesLoaded[product.id] &&
-                      !imageErrors[product.id] &&
-                      !loadingTimeout[product.id] && (
-                        <div className="absolute inset-0 flex items-center justify-center z-10 bg-gray-800 dark:bg-gray-200">
-                          <div className="w-8 h-8 border-2 border-purple-500 border-t-transparent rounded-full animate-spin" />
-                        </div>
-                      )}
+            {products.map((product) => {
+              const discount = calculateDiscount(product);
+              const productImage = getProductImage(product);
+              const isImageLoaded = imagesLoaded[product.id];
+              const hasImageError = imageErrors[product.id];
+              const hasTimeout = loadingTimeout[product.id];
+              const stock = product.stock ?? 0;
+              const finalPrice = product.finalPrice || product.price;
+              const originalPrice = product.price;
 
-                    {/* Error Fallback */}
-                    {imageErrors[product.id] && (
-                      <div className="absolute inset-0 flex items-center justify-center z-10 bg-gray-800 dark:bg-gray-200">
-                        <div className="text-center">
-                          <div className="text-gray-400 text-xs">
-                            Failed to load
+              return (
+                <div
+                  key={product.id}
+                  className="flex-shrink-0 w-full"
+                  style={{
+                    flexBasis: `calc(${100 / itemsToShow}% - ${
+                      itemsToShow > 1
+                        ? (24 * (itemsToShow - 1)) / itemsToShow
+                        : 0
+                    }px)`,
+                  }}
+                >
+                  <Link href={`/product/${product.id}`}>
+                    <div className="relative group overflow-hidden rounded-2xl transition-all duration-300 cursor-pointer">
+                      {/* Product Image with Loading State */}
+                      <div className="relative w-full aspect-square overflow-hidden rounded-2xl bg-gray-800 dark:bg-gray-200">
+                        {/* Loading Spinner */}
+                        {!isImageLoaded && !hasImageError && !hasTimeout && (
+                          <div className="absolute inset-0 flex items-center justify-center z-10 bg-gray-800 dark:bg-gray-200">
+                            <Loader2 className="w-8 h-8 text-orange-500 animate-spin" />
                           </div>
-                        </div>
-                      </div>
-                    )}
+                        )}
 
-                    {/* Timeout Fallback */}
-                    {loadingTimeout[product.id] &&
-                      !imagesLoaded[product.id] &&
-                      !imageErrors[product.id] && (
-                        <div className="absolute inset-0 flex items-center justify-center z-10 bg-gray-800 dark:bg-gray-200">
-                          <div className="text-center">
-                            <div className="text-gray-400 text-xs">
-                              Taking too long
+                        {/* Error Fallback */}
+                        {hasImageError && (
+                          <div className="absolute inset-0 flex items-center justify-center z-10 bg-gray-800 dark:bg-gray-200">
+                            <div className="text-center">
+                              <div className="text-gray-400 text-xs">
+                                Failed to load
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      )}
+                        )}
 
-                    <img
-                      src={product.image}
-                      alt={product.name}
-                      className={`absolute inset-0 w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-500 ${
-                        imagesLoaded[product.id] && !imageErrors[product.id]
-                          ? "opacity-100"
-                          : "opacity-0"
-                      }`}
-                      onLoad={() => handleImageLoad(product.id)}
-                      onError={() => handleImageError(product.id)}
-                      loading="lazy"
-                    />
+                        {/* Timeout Fallback */}
+                        {hasTimeout && !isImageLoaded && !hasImageError && (
+                          <div className="absolute inset-0 flex items-center justify-center z-10 bg-gray-800 dark:bg-gray-200">
+                            <div className="text-center">
+                              <div className="text-gray-400 text-xs">
+                                Taking too long
+                              </div>
+                            </div>
+                          </div>
+                        )}
 
-                    {/* Discount Badge - Show always once image is considered "loaded" (either success, error, or timeout) */}
-                    {(imagesLoaded[product.id] || loadingTimeout[product.id]) &&
-                      !imageErrors[product.id] &&
-                      product.originalPrice && (
-                        <div className="absolute top-3 left-3 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full z-20">
-                          -
-                          {calculateDiscount(
-                            product.price,
-                            product.originalPrice,
+                        <img
+                          src={productImage}
+                          alt={product.name}
+                          className={`absolute inset-0 w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-500 ${
+                            isImageLoaded && !hasImageError
+                              ? "opacity-100"
+                              : "opacity-0"
+                          }`}
+                          onLoad={() => handleImageLoad(product.id)}
+                          onError={() => handleImageError(product.id)}
+                          loading="lazy"
+                        />
+
+                        {/* Discount Badge */}
+                        {discount > 0 && (isImageLoaded || hasTimeout) && (
+                          <div className="absolute top-3 left-3 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full z-20">
+                            -{discount}%
+                          </div>
+                        )}
+
+                        {/* Sale Badge */}
+                        {product.isOnSale && (isImageLoaded || hasTimeout) && (
+                          <div className="absolute top-3 right-3 bg-orange-500 text-white text-xs font-bold px-2 py-1 rounded-full z-20">
+                            SALE
+                          </div>
+                        )}
+
+                        {/* Stock Badge */}
+                        {stock > 0 &&
+                          stock < 10 &&
+                          (isImageLoaded || hasTimeout) && (
+                            <div className="absolute bottom-3 right-3 bg-red-500/90 text-white text-xs px-2 py-1 rounded-full z-20">
+                              Only {stock} left
+                            </div>
                           )}
-                          %
+                      </div>
+
+                      {/* Product Info */}
+                      <div className="p-4">
+                        <p className="text-sm text-gray-400 dark:text-gray-600 mb-1">
+                          {product.category?.name || "Uncategorized"}
+                        </p>
+
+                        <div className="flex items-center justify-between">
+                          <h3 className="text-lg font-semibold text-white dark:text-black line-clamp-1">
+                            {product.name}
+                          </h3>
+                          <button
+                            onClick={(e) => handleAddToCart(product, e)}
+                            disabled={stock <= 0 || addingToCart === product.id}
+                            className="p-1.5 rounded-full hover:bg-gray-800 dark:hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            aria-label={`Add ${product.name} to cart`}
+                          >
+                            {addingToCart === product.id ? (
+                              <Loader2 className="w-4 h-4 text-orange-500 animate-spin" />
+                            ) : (
+                              <ShoppingCartIcon className="w-4 h-4 text-white dark:text-black" />
+                            )}
+                          </button>
                         </div>
-                      )}
-                  </div>
 
-                  {/* Product Info */}
-                  <div className="p-4">
-                    <p className="text-sm text-gray-400 dark:text-gray-600 mb-1">
-                      {product.category}
-                    </p>
-
-                    <div className="flex items-center justify-between">
-                      <h3 className="text-lg font-semibold text-white dark:text-black">
-                        {product.name}
-                      </h3>
-                      <button
-                        className="p-1.5 rounded-full hover:bg-gray-800 dark:hover:bg-gray-200 transition-colors"
-                        aria-label={`Add ${product.name} to cart`}
-                      >
-                        <ShoppingCartIcon className="w-4 h-4 text-white dark:text-black" />
-                      </button>
-                    </div>
-
-                    <div className="flex items-center gap-2 mt-2">
-                      <span className="text-white dark:text-black font-normal text-lg">
-                        ${product.price}
-                      </span>
-                      {product.originalPrice && (
-                        <>
-                          <span className="text-sm text-gray-400 dark:text-gray-600 line-through">
-                            ${product.originalPrice}
+                        <div className="flex items-center gap-2 mt-2 flex-wrap">
+                          <span className="text-white dark:text-black font-normal text-lg">
+                            {product.currency || "$"}
+                            {finalPrice.toFixed(2)}
                           </span>
-                          <span className="text-xs text-[#d88616] dark:text-green-600 font-medium">
-                            Save ${product.originalPrice - product.price}
-                          </span>
-                        </>
-                      )}
+                          {product.isOnSale && finalPrice < originalPrice && (
+                            <>
+                              <span className="text-sm text-gray-400 dark:text-gray-600 line-through">
+                                {product.currency || "$"}
+                                {originalPrice.toFixed(2)}
+                              </span>
+                              <span className="text-xs text-[#d88616] dark:text-green-600 font-medium">
+                                Save {(originalPrice - finalPrice).toFixed(2)}
+                              </span>
+                            </>
+                          )}
+                        </div>
+                      </div>
                     </div>
-                  </div>
+                  </Link>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
 
         {/* Progress Bar and Pagination */}
-        <div className="mt-8 flex flex-col items-center gap-4">
-          {/* Progress Bar */}
-          <div className="w-48 h-1 bg-gray-800 dark:bg-gray-200 rounded-full overflow-hidden">
-            <div
-              className="h-full bg-[#d88616] dark:bg-green-600 rounded-full transition-all duration-300"
-              style={{
-                width:
-                  maxIndex > 0 ? `${(currentIndex / maxIndex) * 100}%` : "0%",
-              }}
-            />
-          </div>
-
-          {/* Pagination Dots for Mobile */}
-          <div className="flex justify-center gap-2 md:hidden">
-            {Array.from({ length: maxIndex + 1 }).map((_, idx) => (
-              <button
-                key={idx}
-                onClick={() => setCurrentIndex(idx)}
-                className={`w-2 h-2 rounded-full transition-all ${
-                  currentIndex === idx
-                    ? "w-4 bg-orange-600 dark:bg-blue-500"
-                    : "bg-gray-600 dark:bg-gray-400"
-                }`}
-                aria-label={`Go to slide ${idx + 1}`}
+        {products.length > itemsToShow && (
+          <div className="mt-8 flex flex-col items-center gap-4">
+            {/* Progress Bar */}
+            <div className="w-48 h-1 bg-gray-800 dark:bg-gray-200 rounded-full overflow-hidden">
+              <div
+                className="h-full bg-[#d88616] dark:bg-green-600 rounded-full transition-all duration-300"
+                style={{
+                  width:
+                    maxIndex > 0 ? `${(currentIndex / maxIndex) * 100}%` : "0%",
+                }}
               />
-            ))}
-          </div>
+            </div>
 
-          {/* Slide Counter for Desktop */}
-          <div className="hidden md:block text-sm text-gray-400 dark:text-gray-600">
-            {currentIndex + 1} / {maxIndex + 1}
+            {/* Pagination Dots for Mobile */}
+            <div className="flex justify-center gap-2 md:hidden">
+              {Array.from({ length: Math.min(maxIndex + 1, 10) }).map(
+                (_, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => setCurrentIndex(idx)}
+                    className={`w-2 h-2 rounded-full transition-all ${
+                      currentIndex === idx
+                        ? "w-4 bg-orange-600 dark:bg-blue-500"
+                        : "bg-gray-600 dark:bg-gray-400"
+                    }`}
+                    aria-label={`Go to slide ${idx + 1}`}
+                  />
+                ),
+              )}
+            </div>
+
+            {/* Slide Counter for Desktop */}
+            <div className="hidden md:block text-sm text-gray-400 dark:text-gray-600">
+              {currentIndex + 1} / {maxIndex + 1}
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </section>
   );

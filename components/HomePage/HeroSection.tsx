@@ -1,7 +1,8 @@
 // components/HeroSection.tsx
 "use client";
 import { ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
-import React, { useState, useEffect } from "react";
+import Link from "next/link";
+import React, { useState, useEffect, useRef } from "react";
 
 // Sample slider images (same as before)
 const sliderImages = [
@@ -25,14 +26,9 @@ const sliderImages = [
     url: "/images/slider/slider5.avif",
     alt: "VR Gaming",
   },
-  {
-    id: 5,
-    url: "/images/slider/slider6.webp",
-    alt: "VR Gaming",
-  },
 ];
 
-// Redesigned offers with image + text + link pattern
+// Offers now correspond to slider images (1:1 mapping)
 const offers = [
   {
     id: 1,
@@ -41,7 +37,7 @@ const offers = [
     title: "Monthly Deals",
     description: "DualSense Controller",
     linkText: "Shop Now",
-    linkUrl: "#",
+    linkUrl: "/shop", // Changed to Next.js route
   },
   {
     id: 2,
@@ -50,7 +46,7 @@ const offers = [
     title: "Combo Offers",
     description: "7.1 Surround Sound",
     linkText: "View Deals",
-    linkUrl: "#",
+    linkUrl: "/deals",
   },
   {
     id: 3,
@@ -59,7 +55,7 @@ const offers = [
     title: "Free Offers",
     description: "RGB Gaming",
     linkText: "Learn More",
-    linkUrl: "#",
+    linkUrl: "/offers",
   },
   {
     id: 4,
@@ -68,46 +64,123 @@ const offers = [
     title: "Pre Orders",
     description: "16000 DPI Sensor",
     linkText: "Check Price",
-    linkUrl: "#",
-  }
+    linkUrl: "/pre-orders",
+  },
 ];
 
 const HeroSection = () => {
   const [currentSlide, setCurrentSlide] = useState(0);
+  const [progress, setProgress] = useState(0);
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const progressIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Auto slide
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setCurrentSlide((prev) => (prev + 1) % sliderImages.length);
-    }, 5000);
-    return () => clearInterval(timer);
-  }, []);
-
-  const nextSlide = () => {
-    setCurrentSlide((prev) => (prev + 1) % sliderImages.length);
+  // Clear all intervals
+  const clearAllIntervals = () => {
+    if (intervalRef.current) clearInterval(intervalRef.current);
+    if (progressIntervalRef.current) clearInterval(progressIntervalRef.current);
   };
 
-  const prevSlide = () => {
+  // Start the progress bar animation for current thumbnail
+  const startProgress = () => {
+    setProgress(0);
+    const startTime = Date.now();
+    const duration = 5000; // 5 seconds
+
+    if (progressIntervalRef.current) clearInterval(progressIntervalRef.current);
+
+    progressIntervalRef.current = setInterval(() => {
+      const elapsed = Date.now() - startTime;
+      const newProgress = Math.min((elapsed / duration) * 100, 100);
+      setProgress(newProgress);
+
+      // When progress reaches 100%, move to next slide
+      if (newProgress >= 100) {
+        clearInterval(progressIntervalRef.current!);
+        goToNextSlide();
+      }
+    }, 16); // Update every ~60fps
+  };
+
+  // Go to next slide
+  const goToNextSlide = () => {
+    setCurrentSlide((prev) => {
+      const next = (prev + 1) % sliderImages.length;
+      return next;
+    });
+  };
+
+  // Go to specific slide
+  const goToSlide = (index: number) => {
+    if (index === currentSlide) return;
+    setCurrentSlide(index);
+    resetProgress();
+  };
+
+  // Reset progress for current thumbnail
+  const resetProgress = () => {
+    clearAllIntervals();
+    startProgress();
+  };
+
+  // Setup auto-slide with progress
+  useEffect(() => {
+    startProgress();
+
+    return () => {
+      clearAllIntervals();
+    };
+  }, []);
+
+  // Reset progress when slide changes manually
+  useEffect(() => {
+    resetProgress();
+  }, [currentSlide]);
+
+  const nextSlide = (e: React.MouseEvent) => {
+    e.preventDefault(); // Prevent any link navigation
+    e.stopPropagation(); // Stop event bubbling
+    goToNextSlide();
+  };
+
+  const prevSlide = (e: React.MouseEvent) => {
+    e.preventDefault(); // Prevent any link navigation
+    e.stopPropagation(); // Stop event bubbling
     setCurrentSlide(
       (prev) => (prev - 1 + sliderImages.length) % sliderImages.length,
     );
+  };
+
+  // Handle main slider click navigation
+  const handleSliderClick = (e: React.MouseEvent) => {
+    // Don't navigate if clicking on buttons
+    const target = e.target as HTMLElement;
+    if (target.closest('button')) {
+      e.preventDefault();
+      return;
+    }
+    // Navigate to shop
+    window.location.href = '/shop';
   };
 
   return (
     <div className="bg-[#191919] dark:bg-white">
       <div className="max-w-7xl mx-auto py-8 transition-colors duration-300">
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
-          {/* Left Side - Slider (3/4 width) */}
+          {/* Left Side - Main Slider */}
           <div className="lg:col-span-4 relative group">
-            <div className="relative h-[568px] rounded-2xl overflow-hidden shadow-2xl dark:shadow-gray-800/50">
+            <div 
+              onClick={handleSliderClick}
+              className="relative h-[568px] rounded-2xl overflow-hidden shadow-2xl dark:shadow-gray-800/50 cursor-pointer"
+            >
               {/* Images */}
               {sliderImages.map((image, index) => (
                 <div
                   key={image.id}
-                  className={`absolute inset-0 transition-transform duration-700 ease-in-out ${index === currentSlide
-                    ? "translate-x-0"
-                    : "translate-x-full"
-                    }`}
+                  className={`absolute inset-0 transition-transform duration-700 ease-in-out ${
+                    index === currentSlide
+                      ? "translate-x-0"
+                      : "translate-x-full"
+                  }`}
                   style={{
                     transform: `translateX(${(index - currentSlide) * 100}%)`,
                   }}
@@ -121,48 +194,53 @@ const HeroSection = () => {
                   <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent dark:from-black/90 dark:via-black/50" />
                 </div>
               ))}
-
+              
               {/* Navigation Arrows */}
               <button
                 onClick={prevSlide}
-                className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-full flex items-center justify-center text-gray-800 dark:text-gray-200 hover:bg-white dark:hover:bg-gray-700 hover:scale-110 transition-all opacity-0 group-hover:opacity-100"
+                className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-full flex items-center justify-center text-gray-800 dark:text-gray-200 hover:bg-white dark:hover:bg-gray-700 hover:scale-110 transition-all opacity-0 group-hover:opacity-100 z-10"
+                aria-label="Previous slide"
               >
                 <ChevronLeftIcon className="w-6 h-6" />
               </button>
               <button
                 onClick={nextSlide}
-                className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-full flex items-center justify-center text-gray-800 dark:text-gray-200 hover:bg-white dark:hover:bg-gray-700 hover:scale-110 transition-all opacity-0 group-hover:opacity-100"
+                className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-full flex items-center justify-center text-gray-800 dark:text-gray-200 hover:bg-white dark:hover:bg-gray-700 hover:scale-110 transition-all opacity-0 group-hover:opacity-100 z-10"
+                aria-label="Next slide"
               >
                 <ChevronRightIcon className="w-6 h-6" />
               </button>
-
-              {/* Dots Indicator */}
-              <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
-                {sliderImages.map((_, index) => (
-                  <button
-                    key={index}
-                    onClick={() => setCurrentSlide(index)}
-                    className={`transition-all ${index === currentSlide
-                      ? "w-8 bg-orange-500"
-                      : "w-2 bg-white/50 dark:bg-gray-400/50 hover:bg-orange-500/50 dark:hover:bg-orange-500/50"
-                      } h-2 rounded-full`}
-                  />
-                ))}
-              </div>
             </div>
           </div>
 
-          {/* Right Side - Offers Grid with Image + Text + Link pattern */}
+          {/* Right Side - Thumbnail Progress Indicators */}
           <div className="lg:col-span-1 grid grid-cols-1 gap-4">
-            {offers.map((offer) => (
+            {offers.map((offer, index) => (
               <div
                 key={offer.id}
-                className="bg-[#28282c] dark:bg-white rounded-xl dark:shadow-gray-800/50 overflow-hidden  dark:hover:shadow-gray-700/50 transition-all duration-300 group cursor-pointer"
+                onClick={() => goToSlide(index)}
+                className={`relative bg-[#28282c] dark:bg-white rounded-xl overflow-hidden transition-all duration-300 group cursor-pointer ${
+                  index === currentSlide
+                    ? "ring-2 ring-orange-500 dark:ring-orange-500 scale-[1.02]"
+                    : "hover:scale-[1.01] hover:shadow-lg"
+                }`}
               >
-                <div className="flex items-center ">
+                {/* Progress bar at the bottom of active thumbnail */}
+                {index === currentSlide && (
+                  <div className="absolute bottom-0 left-0 right-0 h-1 bg-gray-600/30 dark:bg-gray-200/30 z-10">
+                    <div
+                      className="h-full bg-orange-500 transition-all duration-100 ease-linear"
+                      style={{ width: `${progress}%` }}
+                    />
+                  </div>
+                )}
+
+                <div className="flex items-center p-0">
                   {/* Left side - Image/Icon */}
                   <div
-                    className={`flex-shrink-0 w-24 h-[130px] ${offer.imageBg} rounded-[8px] flex items-center justify-center mr-4 group-hover:scale-110 transition-transform duration-300 overflow-hidden`}
+                    className={`flex-shrink-0 w-24 h-[130px] ${offer.imageBg} rounded-[8px] flex items-center justify-center mr-4 group-hover:scale-110 transition-transform duration-300 overflow-hidden ${
+                      index === currentSlide ? "scale-105" : ""
+                    }`}
                   >
                     <img
                       src={offer.image}
@@ -172,13 +250,21 @@ const HeroSection = () => {
                   </div>
 
                   {/* Right side - Text and Link */}
-                  <div className="flex-1 min-w-0">
+                  <div className="flex-1 min-w-0 pr-3">
                     <h3 className="text-xs font-semibold text-white dark:text-gray-600 uppercase tracking-wider font-lato">
                       {offer.title}
                     </h3>
                     <p className="text-sm font-light text-white dark:text-gray-400 mt-1 truncate">
                       {offer.description}
                     </p>
+                    {/* Optional: Add CTA button */}
+                    <Link 
+                      href={offer.linkUrl}
+                      className="inline-block mt-2 text-xs text-orange-500 hover:text-orange-400 font-medium transition-colors"
+                      onClick={(e) => e.stopPropagation()} // Prevent thumbnail click when clicking link
+                    >
+                      {offer.linkText} →
+                    </Link>
                   </div>
                 </div>
               </div>

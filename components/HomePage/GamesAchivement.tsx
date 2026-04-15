@@ -6,101 +6,157 @@ import {
   HeartIcon,
   StarIcon,
   ShoppingCartIcon,
+  Loader2,
+  TrophyIcon,
+  RefreshCw,
 } from "lucide-react";
 import React, { useState, useEffect } from "react";
+import Link from "next/link";
+import { toast } from "react-hot-toast";
+import { useCart } from "../../app/contexts/CartContext";
+import { useUserAuth } from "../../app/contexts/UserAuthContext";
+import { useWishlist } from "../../app/contexts/WishlistContext";
 
-// Sample editor's picks data based on your image
-const gamesAchivement = [
-  {
-    id: 1,
-    name: "SIFU",
-    category: "Action Game",
-    price: 456,
-    originalPrice: 760,
-    discount: 40,
-    image:
-      "https://images.unsplash.com/photo-1605901309584-818e25960a8f?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-    editorRating: 4.8,
-  },
-  {
-    id: 2,
-    name: "Baseball Cap",
-    category: "Accessories",
-    price: 864,
-    originalPrice: 1080,
-    discount: 20,
-    image:
-      "https://images.unsplash.com/photo-1588850561407-ed78c282e89b?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-    editorRating: 4.5,
-  },
-  {
-    id: 3,
-    name: "Block Blouse",
-    category: "Contemporary",
-    price: 300,
-    originalPrice: 500,
-    discount: 40,
-    image:
-      "https://images.unsplash.com/photo-1624206112918-f140f087f9b5?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-    editorRating: 4.7,
-  },
-  {
-    id: 4,
-    name: "Daiki Blouse",
-    category: "Contemporary",
-    price: 500,
-    originalPrice: 650,
-    discount: 23,
-    image:
-      "https://images.unsplash.com/photo-1614251056216-f1d4b13507f4?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-    editorRating: 4.6,
-  },
-  {
-    id: 5,
-    name: "Billfold Wallet",
-    category: "Accessories",
-    price: 540,
-    originalPrice: 600,
-    discount: 10,
-    image:
-      "https://images.unsplash.com/photo-1627222784012-94ef2c4c81c8?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-    editorRating: 4.4,
-  },
-  {
-    id: 6,
-    name: "Crochet Cardigan",
-    category: "Contemporary",
-    price: 730,
-    originalPrice: 912,
-    discount: 20,
-    image:
-      "https://images.unsplash.com/photo-1620799140408-edc6dcb6d633?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-    editorRating: 4.9,
-  },
-  {
-    id: 7,
-    name: "Dress",
-    category: "Contemporary",
-    price: 470,
-    originalPrice: 670,
-    discount: 30,
-    image:
-      "https://images.unsplash.com/photo-1596755094514-f87e34085b2c?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-    editorRating: 4.5,
-  },
-];
+// Product type based on your API response
+interface Product {
+  _id: string;
+  id: string;
+  name: string;
+  description: string;
+  shortDescription: string;
+  price: number;
+  discountPrice: number;
+  currency: string;
+  category: {
+    _id: string;
+    name: string;
+  };
+  brand: string;
+  mainImage: string;
+  images: string[];
+  stock: number;
+  availability: string;
+  type: string;
+  offerType: "featured" | "sale" | "new" | "none";
+  isFeatured: boolean;
+  offerBadge: string;
+  offerBadgeColor: string;
+  isOnSale: boolean;
+  discountPercentage: number;
+  rating: string;
+  isActive: boolean;
+  soldCount: number;
+  finalPrice: number;
+  offerDisplay: {
+    type: string;
+    badge: string;
+    color: string;
+    priority: number;
+  };
+}
 
 const GamesAchivement = () => {
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [favorites, setFavorites] = useState<number[]>([]);
-  const [imagesLoaded, setImagesLoaded] = useState<{ [key: number]: boolean }>(
-    {},
-  );
-  const [imageErrors, setImageErrors] = useState<{ [key: number]: boolean }>(
-    {},
-  );
-  const [loadingTimeout, setLoadingTimeout] = useState<{ [key: number]: boolean }>({});
   const [itemsToShow, setItemsToShow] = useState(4);
+  const [imagesLoaded, setImagesLoaded] = useState<{ [key: string]: boolean }>(
+    {},
+  );
+  const [imageErrors, setImageErrors] = useState<{ [key: string]: boolean }>(
+    {},
+  );
+  const [loadingTimeout, setLoadingTimeout] = useState<{
+    [key: string]: boolean;
+  }>({});
+  const [addingToCart, setAddingToCart] = useState<string | null>(null);
+
+  // Get cart and wishlist contexts
+  const { addToCart } = useCart();
+  const { wishlist, addToWishlist, removeFromWishlist, checkInWishlist } =
+    useWishlist();
+  const { user } = useUserAuth();
+
+  const API_URL =
+    process.env.NEXT_PUBLIC_API_URL || "https://gamersbd-server.onrender.com";
+
+  // Helper function to get currency symbol
+  const getCurrencySymbol = (currency: string | undefined) => {
+    switch (currency) {
+      case "BDT":
+        return "৳";
+      case "USD":
+        return "$";
+      case "EUR":
+        return "€";
+      case "GBP":
+        return "£";
+      default:
+        return "$";
+    }
+  };
+
+  // Fetch products from API
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+
+        console.log("Fetching products from:", `${API_URL}/api/products`);
+
+        const response = await fetch(`${API_URL}/api/products`, {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+
+        if (!data.success || !data.data) {
+          throw new Error("Invalid response format");
+        }
+
+        // Filter products that are games or have high ratings/achievements
+        const gamesProducts = data.data.filter((product: Product) => {
+          // Filter for games (by type or category)
+          const isGame =
+            product.type === "card-game" ||
+            product.category?.name?.toLowerCase().includes("game") ||
+            product.type === "game" ||
+            product.category?.name?.toLowerCase().includes("action") ||
+            product.category?.name?.toLowerCase().includes("rpg");
+
+          // Or get products with rating >= 4.0
+          const hasHighRating = Number(product.rating) >= 4.0;
+
+          // Or get featured products
+          const isFeatured =
+            product.isFeatured === true || product.offerType === "featured";
+
+          return isGame || hasHighRating || isFeatured;
+        });
+
+        setProducts(gamesProducts.slice(0, 10)); // Limit to 10 products
+        setLoading(false);
+      } catch (err: any) {
+        console.error("Error fetching products:", err);
+        setError(
+          err.message ||
+            "Failed to load products. Please check your connection.",
+        );
+        setLoading(false);
+      }
+    };
+
+    fetchProducts();
+  }, [API_URL]);
 
   useEffect(() => {
     const handleResize = () => {
@@ -114,9 +170,8 @@ const GamesAchivement = () => {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  const maxIndex = Math.max(0, gamesAchivement.length - itemsToShow);
+  const maxIndex = Math.max(0, products.length - itemsToShow);
 
-  // Reset currentIndex if it exceeds maxIndex
   useEffect(() => {
     if (currentIndex > maxIndex) {
       setCurrentIndex(maxIndex);
@@ -126,31 +181,33 @@ const GamesAchivement = () => {
   // Set timeout for each image to prevent infinite loading
   useEffect(() => {
     const timers: NodeJS.Timeout[] = [];
-    
-    gamesAchivement.forEach((product) => {
+
+    products.forEach((product) => {
       const timer = setTimeout(() => {
         if (!imagesLoaded[product.id] && !imageErrors[product.id]) {
           setLoadingTimeout((prev) => ({ ...prev, [product.id]: true }));
-          setImagesLoaded((prev) => ({ ...prev, [product.id]: true })); // Force mark as loaded
-          console.log(`Image ${product.id} loading timed out`);
+          setImagesLoaded((prev) => ({ ...prev, [product.id]: true }));
         }
-      }, 5000); // 5 second timeout
-      
+      }, 5000);
+
       timers.push(timer);
     });
 
-    return () => timers.forEach(timer => clearTimeout(timer));
-  }, [imagesLoaded, imageErrors]);
+    return () => timers.forEach((timer) => clearTimeout(timer));
+  }, [products, imagesLoaded, imageErrors]);
 
-  // Preload images on component mount
+  // Preload images
   useEffect(() => {
-    gamesAchivement.forEach((product) => {
-      const img = new Image();
-      img.src = product.image;
-      img.onload = () => handleImageLoad(product.id);
-      img.onerror = () => handleImageError(product.id);
+    products.forEach((product) => {
+      const imageUrl = product.mainImage || product.images?.[0];
+      if (imageUrl && imageUrl !== "/placeholder.jpg") {
+        const img = new Image();
+        img.src = imageUrl;
+        img.onload = () => handleImageLoad(product.id);
+        img.onerror = () => handleImageError(product.id);
+      }
     });
-  }, []);
+  }, [products]);
 
   const nextSlide = () => {
     setCurrentIndex((prev) => Math.min(prev + 1, maxIndex));
@@ -160,33 +217,193 @@ const GamesAchivement = () => {
     setCurrentIndex((prev) => Math.max(prev - 1, 0));
   };
 
-  const toggleFavorite = (id: number, e: React.MouseEvent) => {
-    e.stopPropagation();
-    setFavorites((prev) =>
-      prev.includes(id) ? prev.filter((fav) => fav !== id) : [...prev, id],
-    );
-  };
-
-  const handleImageLoad = (productId: number) => {
+  const handleImageLoad = (productId: string) => {
     setImagesLoaded((prev) => ({ ...prev, [productId]: true }));
-    console.log(`Image ${productId} loaded successfully`);
   };
 
-  const handleImageError = (productId: number) => {
+  const handleImageError = (productId: string) => {
     setImageErrors((prev) => ({ ...prev, [productId]: true }));
-    setImagesLoaded((prev) => ({ ...prev, [productId]: true })); // Mark as loaded to hide spinner
-    console.log(`Image ${productId} failed to load`);
+    setImagesLoaded((prev) => ({ ...prev, [productId]: true }));
   };
 
-  const calculateDiscount = (price: number, originalPrice: number) => {
-    return Math.round(((originalPrice - price) / originalPrice) * 100);
+  const handleAddToCart = async (product: Product, e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    const availableStock = product.stock ?? 0;
+    if (availableStock <= 0) {
+      toast.error("Out of stock");
+      return;
+    }
+
+    setAddingToCart(product.id);
+
+    const cartProduct = {
+      _id: product._id,
+      name: product.name,
+      price: product.finalPrice || product.price,
+      inStock: availableStock > 0,
+      image: product.mainImage || product.images?.[0] || "",
+      quantity: 1,
+    };
+
+    const success = await addToCart(cartProduct, 1);
+
+    if (success) {
+      toast.success("Added to cart!");
+    } else {
+      toast.error("Failed to add to cart");
+    }
+
+    setAddingToCart(null);
   };
+
+  const handleToggleWishlist = async (
+    product: Product,
+    e: React.MouseEvent,
+  ) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (!user) {
+      toast.error("Please login to add to wishlist");
+      return;
+    }
+
+    const isInWishlist = checkInWishlist(product._id);
+
+    if (isInWishlist) {
+      const wishlistItem = wishlist?.items.find(
+        (item) => item.product._id === product._id,
+      );
+      if (wishlistItem) {
+        await removeFromWishlist(wishlistItem._id);
+        toast.success("Removed from wishlist");
+      }
+    } else {
+      await addToWishlist(product._id);
+      toast.success("Added to wishlist");
+    }
+  };
+
+  const calculateDiscount = (product: Product) => {
+    if (product.discountPercentage > 0) {
+      return product.discountPercentage;
+    }
+    if (product.isOnSale && product.finalPrice < product.price) {
+      return Math.round(
+        ((product.price - product.finalPrice) / product.price) * 100,
+      );
+    }
+    return 0;
+  };
+
+  const getProductImage = (product: Product) => {
+    return product.mainImage || product.images?.[0] || "/placeholder.jpg";
+  };
+
+  const getRating = (product: Product) => {
+    const rating = Number(product.rating);
+    return isNaN(rating) ? 4.5 : rating;
+  };
+
+  const handleRetry = () => {
+    window.location.reload();
+  };
+
+  if (loading) {
+    return (
+      <section className="py-16 bg-[#1a1a1a] dark:bg-white transition-colors duration-300">
+        <div className="max-w-7xl mx-auto px-4">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-10 gap-4">
+            <div>
+              <h2 className="text-3xl md:text-4xl text-white dark:text-black">
+                Games with Achievements
+              </h2>
+              <p className="text-gray-400 dark:text-gray-600 mt-2">
+                Curated just for you by our team
+              </p>
+            </div>
+          </div>
+          <div className="flex justify-center items-center h-96">
+            <div className="text-center">
+              <Loader2 className="w-12 h-12 text-orange-500 animate-spin mx-auto mb-4" />
+              <p className="text-gray-400 dark:text-gray-600">
+                Loading games...
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  if (error) {
+    return (
+      <section className="py-16 bg-[#1a1a1a] dark:bg-white transition-colors duration-300">
+        <div className="max-w-7xl mx-auto px-4">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-10 gap-4">
+            <div>
+              <h2 className="text-3xl md:text-4xl text-white dark:text-black">
+                Games with Achievements
+              </h2>
+              <p className="text-gray-400 dark:text-gray-600 mt-2">
+                Curated just for you by our team
+              </p>
+            </div>
+          </div>
+          <div className="text-center py-12 bg-gray-800/50 dark:bg-gray-100/50 rounded-xl">
+            <div className="text-red-500 text-6xl mb-4">⚠️</div>
+            <p className="text-red-500 mb-4">Failed to load products</p>
+            <p className="text-gray-400 dark:text-gray-600 text-sm mb-6 max-w-md mx-auto">
+              {error}
+            </p>
+            <button
+              onClick={handleRetry}
+              className="px-6 py-3 bg-orange-500 hover:bg-orange-600 text-white rounded-lg transition-colors flex items-center gap-2 mx-auto"
+            >
+              <RefreshCw className="w-4 h-4" />
+              Try Again
+            </button>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  if (products.length === 0) {
+    return (
+      <section className="py-16 bg-[#1a1a1a] dark:bg-white transition-colors duration-300">
+        <div className="max-w-7xl mx-auto px-4">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-10 gap-4">
+            <div>
+              <h2 className="text-3xl md:text-4xl text-white dark:text-black">
+                Games with Achievements
+              </h2>
+              <p className="text-gray-400 dark:text-gray-600 mt-2">
+                Curated just for you by our team
+              </p>
+            </div>
+          </div>
+          <div className="text-center py-12">
+            <TrophyIcon className="w-16 h-16 text-gray-600 dark:text-gray-400 mx-auto mb-4" />
+            <p className="text-gray-400 dark:text-gray-600">
+              No games available at the moment.
+            </p>
+            <p className="text-gray-500 dark:text-gray-500 text-sm mt-2">
+              Check back soon for new releases!
+            </p>
+          </div>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section className="py-16 bg-[#1a1a1a] dark:bg-white transition-colors duration-300">
-      <div className="max-w-7xl mx-auto">
+      <div className="max-w-7xl mx-auto px-4">
         {/* Header */}
-        <div className="flex items-center justify-between mb-10">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-10 gap-4">
           <div>
             <h2 className="text-3xl md:text-4xl text-white dark:text-black">
               Games with Achievements
@@ -196,8 +413,8 @@ const GamesAchivement = () => {
             </p>
           </div>
 
-          {/* Navigation Buttons    */}
-          <div className="flex gap-2">
+          {/* Navigation Buttons */}
+          <div className="flex gap-2 self-end sm:self-auto">
             <button
               onClick={prevSlide}
               disabled={currentIndex === 0}
@@ -234,127 +451,178 @@ const GamesAchivement = () => {
                 transform: `translateX(-${currentIndex * (100 / itemsToShow)}%)`,
               }}
             >
-              {gamesAchivement.map((item) => (
-                <div
-                  key={item.id}
-                  className="flex-shrink-0 w-full"
-                  style={{
-                    flexBasis: `calc(${100 / itemsToShow}% - ${
-                      itemsToShow > 1 ? 24 : 0
-                    }px)`,
-                  }}
-                >
-                  <div className="relative group/card overflow-hidden rounded-2xl transition-all duration-300">
-                    {/* Product Image with Background Color */}
-                    <div className="relative w-full aspect-square overflow-hidden rounded-2xl bg-gray-800 dark:bg-gray-200">
-                      {/* Loading Spinner */}
-                      {!imagesLoaded[item.id] && !imageErrors[item.id] && !loadingTimeout[item.id] && (
-                        <div className="absolute inset-0 flex items-center justify-center z-10 bg-gray-800 dark:bg-gray-200">
-                          <div className="w-8 h-8 border-2 border-purple-500 border-t-transparent rounded-full animate-spin" />
-                        </div>
-                      )}
+              {products.map((product) => {
+                const discount = calculateDiscount(product);
+                const productImage = getProductImage(product);
+                const isImageLoaded = imagesLoaded[product.id];
+                const hasImageError = imageErrors[product.id];
+                const hasTimeout = loadingTimeout[product.id];
+                const stock = product.stock ?? 0;
+                const finalPrice = product.finalPrice || product.price;
+                const originalPrice = product.price;
+                const rating = getRating(product);
+                const isInWishlist = checkInWishlist(product._id);
 
-                      {/* Error Fallback */}
-                      {imageErrors[item.id] && (
-                        <div className="absolute inset-0 flex items-center justify-center z-10 bg-gray-800 dark:bg-gray-200">
-                          <div className="text-center">
-                            <div className="text-gray-400 text-xs">
-                              Failed to load
+                return (
+                  <div
+                    key={product.id}
+                    className="flex-shrink-0 w-full"
+                    style={{
+                      flexBasis: `calc(${100 / itemsToShow}% - ${
+                        itemsToShow > 1
+                          ? (24 * (itemsToShow - 1)) / itemsToShow
+                          : 0
+                      }px)`,
+                    }}
+                  >
+                    <Link href={`/product/${product.id}`}>
+                      <div className="relative group/card overflow-hidden rounded-2xl transition-all duration-300 cursor-pointer">
+                        {/* Product Image */}
+                        <div className="relative w-full aspect-square overflow-hidden rounded-2xl bg-gray-800 dark:bg-gray-200">
+                          {/* Loading Spinner */}
+                          {!isImageLoaded && !hasImageError && !hasTimeout && (
+                            <div className="absolute inset-0 flex items-center justify-center z-10 bg-gray-800 dark:bg-gray-200">
+                              <Loader2 className="w-8 h-8 text-orange-500 animate-spin" />
                             </div>
-                          </div>
-                        </div>
-                      )}
+                          )}
 
-                      {/* Timeout Fallback */}
-                      {loadingTimeout[item.id] && !imagesLoaded[item.id] && !imageErrors[item.id] && (
-                        <div className="absolute inset-0 flex items-center justify-center z-10 bg-gray-800 dark:bg-gray-200">
-                          <div className="text-center">
-                            <div className="text-gray-400 text-xs">
-                              Taking too long
+                          {/* Error Fallback */}
+                          {hasImageError && (
+                            <div className="absolute inset-0 flex items-center justify-center z-10 bg-gray-800 dark:bg-gray-200">
+                              <div className="text-center">
+                                <div className="text-gray-400 text-xs">
+                                  Failed to load
+                                </div>
+                              </div>
                             </div>
-                          </div>
-                        </div>
-                      )}
+                          )}
 
-                      <img
-                        src={item.image}
-                        alt={item.name}
-                        className={`absolute inset-0 w-full h-full object-cover transform group-hover/card:scale-110 transition-transform duration-500 ${
-                          imagesLoaded[item.id] && !imageErrors[item.id]
-                            ? "opacity-100"
-                            : "opacity-0"
-                        }`}
-                        onLoad={() => handleImageLoad(item.id)}
-                        onError={() => handleImageError(item.id)}
-                        loading="lazy"
-                      />
+                          {/* Timeout Fallback */}
+                          {hasTimeout && !isImageLoaded && !hasImageError && (
+                            <div className="absolute inset-0 flex items-center justify-center z-10 bg-gray-800 dark:bg-gray-200">
+                              <div className="text-center">
+                                <div className="text-gray-400 text-xs">
+                                  Taking too long
+                                </div>
+                              </div>
+                            </div>
+                          )}
 
-                      {/* Discount Badge - Show if image loaded or timed out */}
-                      {(imagesLoaded[item.id] || loadingTimeout[item.id]) && !imageErrors[item.id] && (
-                        <div className="absolute top-3 left-3 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full z-20">
-                          -{calculateDiscount(item.price, item.originalPrice)}%
-                        </div>
-                      )}
-
-                      {/* Rating Badge - Show if image loaded or timed out */}
-                      {(imagesLoaded[item.id] || loadingTimeout[item.id]) && !imageErrors[item.id] && (
-                        <div className="absolute top-3 right-3 bg-black/70 backdrop-blur-sm text-white px-2 py-1 rounded-full text-xs font-bold flex items-center gap-1 z-20">
-                          <StarIcon className="w-3 h-3 fill-yellow-500 text-yellow-500" />
-                          <span>{item.editorRating}</span>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Product Info */}
-                    <div className="p-4">
-                      <div className="flex items-center justify-between gap-2">
-                        <p className="text-sm text-gray-400 dark:text-gray-600">
-                          {item.category}
-                        </p>
-                        <button
-                          onClick={(e) => toggleFavorite(item.id, e)}
-                          className="p-1.5 rounded-full hover:bg-gray-800 dark:hover:bg-gray-200 transition-colors"
-                          aria-label={`Add ${item.name} to wishlist`}
-                        >
-                          <HeartIcon
-                            className={`w-4 h-4 ${
-                              favorites.includes(item.id)
-                                ? "fill-red-500 text-red-500"
-                                : "text-white dark:text-black"
+                          <img
+                            src={productImage}
+                            alt={product.name}
+                            className={`absolute inset-0 w-full h-full object-cover transform group-hover/card:scale-110 transition-transform duration-500 ${
+                              isImageLoaded && !hasImageError
+                                ? "opacity-100"
+                                : "opacity-0"
                             }`}
+                            onLoad={() => handleImageLoad(product.id)}
+                            onError={() => handleImageError(product.id)}
+                            loading="lazy"
                           />
-                        </button>
+
+                          {/* Discount Badge */}
+                          {discount > 0 &&
+                            (isImageLoaded || hasTimeout) &&
+                            !hasImageError && (
+                              <div className="absolute top-3 left-3 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full z-20">
+                                -{discount}%
+                              </div>
+                            )}
+
+                          {/* Achievement/Trophy Badge */}
+                          {(isImageLoaded || hasTimeout) && !hasImageError && (
+                            <div className="absolute top-3 left-3 bg-amber-500/90 text-white text-xs font-bold px-2 py-1 rounded-full z-20 flex items-center gap-1">
+                              <TrophyIcon className="w-3 h-3" />
+                              <span>Platinum</span>
+                            </div>
+                          )}
+
+                          {/* Rating Badge */}
+                          {(isImageLoaded || hasTimeout) && !hasImageError && (
+                            <div className="absolute top-3 right-3 bg-black/70 backdrop-blur-sm text-white px-2 py-1 rounded-full text-xs font-bold flex items-center gap-1 z-20">
+                              <StarIcon className="w-3 h-3 fill-yellow-500 text-yellow-500" />
+                              <span>{rating.toFixed(1)}</span>
+                            </div>
+                          )}
+
+                          {/* Stock Badge */}
+                          {stock > 0 &&
+                            stock < 10 &&
+                            (isImageLoaded || hasTimeout) && (
+                              <div className="absolute bottom-3 right-3 bg-red-500/90 text-white text-xs px-2 py-1 rounded-full z-20">
+                                Only {stock} left
+                              </div>
+                            )}
+                        </div>
+
+                        {/* Product Info */}
+                        <div className="p-4">
+                          <div className="flex items-center justify-between gap-2">
+                            <p className="text-sm text-gray-400 dark:text-gray-600">
+                              {product.category?.name || "Game"}
+                            </p>
+                            <button
+                              onClick={(e) => handleToggleWishlist(product, e)}
+                              className="p-1.5 rounded-full hover:bg-gray-800 dark:hover:bg-gray-200 transition-colors"
+                              aria-label={`Add ${product.name} to wishlist`}
+                            >
+                              <HeartIcon
+                                className={`w-4 h-4 ${
+                                  isInWishlist
+                                    ? "fill-red-500 text-red-500"
+                                    : "text-white dark:text-black"
+                                }`}
+                              />
+                            </button>
+                          </div>
+
+                          <h3 className="text-lg font-normal text-white dark:text-black mb-2 line-clamp-1">
+                            {product.name}
+                          </h3>
+
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="text-white dark:text-black font-semibold text-lg">
+                              {getCurrencySymbol(product.currency)}
+                              {finalPrice.toFixed(2)}
+                            </span>
+                            {discount > 0 && (
+                              <span className="text-sm text-gray-400 dark:text-gray-600 line-through">
+                                {getCurrencySymbol(product.currency)}
+                                {originalPrice.toFixed(2)}
+                              </span>
+                            )}
+                          </div>
+
+                          {/* Add to Cart Button */}
+                          <button
+                            onClick={(e) => handleAddToCart(product, e)}
+                            disabled={stock <= 0 || addingToCart === product.id}
+                            className="w-full mt-4 px-4 py-2 bg-gray-900 dark:bg-white text-white dark:text-gray-900 rounded-lg font-medium opacity-0 group-hover/card:opacity-100 transition-opacity duration-300 hover:bg-gray-800 dark:hover:bg-gray-100 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            {addingToCart === product.id ? (
+                              <>
+                                <Loader2 className="w-4 h-4 animate-spin" />
+                                Adding...
+                              </>
+                            ) : (
+                              <>
+                                <ShoppingCartIcon className="w-4 h-4" />
+                                {stock <= 0 ? "Out of Stock" : "Add to Cart"}
+                              </>
+                            )}
+                          </button>
+                        </div>
                       </div>
-
-                      <h3 className="text-lg font-normal text-white dark:text-black mb-2">
-                        {item.name}
-                      </h3>
-
-                      <div className="flex items-center gap-2">
-                        <span className="text-white dark:text-black font-semibold text-lg">
-                          ${item.price}
-                        </span>
-                        {item.originalPrice && (
-                          <span className="text-sm text-gray-400 dark:text-gray-600 line-through">
-                            ${item.originalPrice}
-                          </span>
-                        )}
-                      </div>
-
-                      {/* Add to Cart Button */}
-                      <button className="w-full mt-4 px-4 py-2 bg-gray-900 dark:bg-white text-white dark:text-gray-900 rounded-lg font-medium opacity-0 group-hover/card:opacity-100 transition-opacity duration-300 hover:bg-gray-800 dark:hover:bg-gray-100 flex items-center justify-center gap-2">
-                        <ShoppingCartIcon className="w-4 h-4" />
-                        Add to Cart
-                      </button>
-                    </div>
+                    </Link>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
 
-          {/* Navigation Arrows - Show only if needed */}
-          {currentIndex > 0 && (
+          {/* Navigation Arrows */}
+          {products.length > itemsToShow && currentIndex > 0 && (
             <button
               onClick={prevSlide}
               className="absolute -left-4 top-1/2 -translate-y-1/2 w-10 h-10 bg-white dark:bg-gray-800 rounded-full shadow-lg flex items-center justify-center text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-all opacity-0 group-hover:opacity-100"
@@ -364,7 +632,7 @@ const GamesAchivement = () => {
             </button>
           )}
 
-          {currentIndex < maxIndex && (
+          {products.length > itemsToShow && currentIndex < maxIndex && (
             <button
               onClick={nextSlide}
               className="absolute -right-4 top-1/2 -translate-y-1/2 w-10 h-10 bg-white dark:bg-gray-800 rounded-full shadow-lg flex items-center justify-center text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-all opacity-0 group-hover:opacity-100"
@@ -376,16 +644,19 @@ const GamesAchivement = () => {
         </div>
 
         {/* Progress Bar */}
-        <div className="mt-8 flex justify-center">
-          <div className="w-48 h-1 bg-gray-800 dark:bg-gray-200 rounded-full overflow-hidden">
-            <div
-              className="h-full bg-orange-600 dark:bg-blue-500 rounded-full transition-all duration-300"
-              style={{
-                width: maxIndex > 0 ? `${(currentIndex / maxIndex) * 100}%` : "0%",
-              }}
-            />
+        {products.length > itemsToShow && (
+          <div className="mt-8 flex justify-center">
+            <div className="w-48 h-1 bg-gray-800 dark:bg-gray-200 rounded-full overflow-hidden">
+              <div
+                className="h-full bg-orange-600 dark:bg-blue-500 rounded-full transition-all duration-300"
+                style={{
+                  width:
+                    maxIndex > 0 ? `${(currentIndex / maxIndex) * 100}%` : "0%",
+                }}
+              />
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </section>
   );
