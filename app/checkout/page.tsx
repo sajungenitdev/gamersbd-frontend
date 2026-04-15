@@ -37,6 +37,13 @@ const currencies: Currency[] = [
   { code: "USD", symbol: "$", name: "US Dollar", rate: 1 / EXCHANGE_RATE },
 ];
 
+interface PaymentMethodType {
+  id: string;
+  name: string;
+  icon: React.ElementType;
+  description: string;
+}
+
 export default function CheckoutPage() {
   const router = useRouter();
   const {
@@ -77,6 +84,7 @@ export default function CheckoutPage() {
     | "debit_card"
     | "cash_on_delivery"
   >("cash_on_delivery");
+
   const [paymentDetails, setPaymentDetails] = useState({
     transactionId: "",
     mobileNumber: "",
@@ -86,6 +94,34 @@ export default function CheckoutPage() {
     useState(true);
   const [billingAddress, setBillingAddress] = useState({ ...shippingAddress });
   const [notes, setNotes] = useState("");
+
+  // Payment methods with proper ids
+  const paymentMethods: PaymentMethodType[] = [
+    {
+      id: "cash_on_delivery",
+      name: "Cash on Delivery",
+      icon: Banknote,
+      description: "Pay when you receive the order",
+    },
+    {
+      id: "bkash",
+      name: "bKash",
+      icon: Smartphone,
+      description: "Pay with bKash mobile banking",
+    },
+    {
+      id: "nagad",
+      name: "Nagad",
+      icon: Smartphone,
+      description: "Pay with Nagad mobile banking",
+    },
+    {
+      id: "credit_card",
+      name: "Credit/Debit Card",
+      icon: CardIcon,
+      description: "Pay with Visa/Mastercard",
+    },
+  ];
 
   // Check if user is logged in
   useEffect(() => {
@@ -98,8 +134,8 @@ export default function CheckoutPage() {
   // Redirect if cart is empty
   useEffect(() => {
     if (!cartLoading && items.length === 0) {
-      toast.success("Your cart is empty");
-      //   router.push("/cart");
+      toast.error("Your cart is empty");
+      // router.push("/cart");
     }
   }, [items, cartLoading, router]);
 
@@ -239,15 +275,15 @@ export default function CheckoutPage() {
 
     setIsSubmitting(true);
 
-    // Prepare cart items for order
+    // Prepare cart items for order - FIXED: Use _id or id
     const orderItems = items.map((item) => ({
-      product: item._id as string,
+      product: item._id || item.id, // Works with both _id and id
       quantity: item.quantity,
       platform: item.platform || "PC",
       priceAtTime: item.price,
     }));
 
-    // Prepare order data according to your backend schema
+    // Prepare order data
     const orderData = {
       items: orderItems,
       shippingAddress: {
@@ -318,33 +354,6 @@ export default function CheckoutPage() {
   if (items.length === 0) {
     return null;
   }
-
-  const paymentMethods = [
-    {
-      id: "cash_on_delivery",
-      name: "Cash on Delivery",
-      icon: Banknote,
-      description: "Pay when you receive the order",
-    },
-    {
-      id: "bkash",
-      name: "bKash",
-      icon: Smartphone,
-      description: "Pay with bKash mobile banking",
-    },
-    {
-      id: "nagad",
-      name: "Nagad",
-      icon: Smartphone,
-      description: "Pay with Nagad mobile banking",
-    },
-    {
-      id: "credit_card",
-      name: "Credit/Debit Card",
-      icon: CardIcon,
-      description: "Pay with Visa/Mastercard",
-    },
-  ];
 
   return (
     <div className="min-h-screen bg-[#1a1a1a] py-8 px-4 sm:px-6 lg:px-8">
@@ -726,7 +735,10 @@ export default function CheckoutPage() {
               {/* Items List */}
               <div className="space-y-4 max-h-96 overflow-y-auto mb-4 pr-2">
                 {items.map((item) => (
-                  <div key={item.id} className="bg-black/20 rounded-lg p-3">
+                  <div
+                    key={item._id || item.id}
+                    className="bg-black/20 rounded-lg p-3"
+                  >
                     <div className="flex gap-3">
                       <img
                         src={item.image || "/placeholder.png"}
@@ -745,15 +757,18 @@ export default function CheckoutPage() {
                         <div className="flex items-center gap-2 mt-2">
                           <button
                             onClick={() =>
-                              handleUpdateQuantity(item.id, item.quantity - 1)
+                              handleUpdateQuantity(
+                                item._id || item.id,
+                                item.quantity - 1,
+                              )
                             }
-                            disabled={updatingItemId === item.id}
+                            disabled={updatingItemId === (item._id || item.id)}
                             className="p-1 bg-gray-700 hover:bg-gray-600 rounded text-white transition disabled:opacity-50"
                           >
                             <Minus className="w-3 h-3" />
                           </button>
                           <span className="text-white text-sm min-w-[30px] text-center">
-                            {updatingItemId === item.id ? (
+                            {updatingItemId === (item._id || item.id) ? (
                               <Loader2 className="w-3 h-3 animate-spin inline" />
                             ) : (
                               item.quantity
@@ -761,16 +776,21 @@ export default function CheckoutPage() {
                           </span>
                           <button
                             onClick={() =>
-                              handleUpdateQuantity(item.id, item.quantity + 1)
+                              handleUpdateQuantity(
+                                item._id || item.id,
+                                item.quantity + 1,
+                              )
                             }
-                            disabled={updatingItemId === item.id}
+                            disabled={updatingItemId === (item._id || item.id)}
                             className="p-1 bg-gray-700 hover:bg-gray-600 rounded text-white transition disabled:opacity-50"
                           >
                             <Plus className="w-3 h-3" />
                           </button>
                           <button
-                            onClick={() => handleRemoveItem(item.id)}
-                            disabled={updatingItemId === item.id}
+                            onClick={() =>
+                              handleRemoveItem(item._id || item.id)
+                            }
+                            disabled={updatingItemId === (item._id || item.id)}
                             className="p-1 bg-red-500/20 hover:bg-red-500/30 rounded text-red-400 transition ml-2"
                           >
                             <Trash2 className="w-3 h-3" />
@@ -823,13 +843,6 @@ export default function CheckoutPage() {
                   </p>
                 </div>
               )}
-
-              {/* Debug info (remove in production) */}
-              <div className="mt-3 p-2 bg-gray-700/30 rounded-lg text-center">
-                <p className="text-xs text-gray-400">
-                  Token: {token ? "Present" : "Missing"}
-                </p>
-              </div>
 
               <button
                 onClick={handlePlaceOrder}

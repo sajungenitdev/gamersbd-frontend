@@ -6,7 +6,7 @@ import { toast } from "react-hot-toast";
 
 export interface CartItem {
   _id: string;
-  id: string;
+  // id: string;
   productId: string;
   name: string;
   price: number;
@@ -230,7 +230,7 @@ export const CartProvider = ({
       if (!isLoggedIn()) {
         // Guest mode
         const newItem: CartItem = {
-          id: `${productId}_${Date.now()}`,
+          _id: `${productId}_${Date.now()}`,
           productId: productId,
           name: product.name,
           price: product.discountPrice || product.price,
@@ -306,7 +306,7 @@ export const CartProvider = ({
       if (!isLoggedIn()) {
         setItems(prevItems => {
           const updatedItems = prevItems.map(item =>
-            item.id === itemId ? { ...item, quantity } : item
+            item._id === itemId ? { ...item, quantity } : item
           );
           saveGuestCart(updatedItems);
           return updatedItems;
@@ -339,7 +339,7 @@ export const CartProvider = ({
     try {
       if (!isLoggedIn()) {
         setItems(prevItems => {
-          const updatedItems = prevItems.filter(item => item.id !== itemId);
+          const updatedItems = prevItems.filter(item => item._id !== itemId);
           saveGuestCart(updatedItems);
           return updatedItems;
         });
