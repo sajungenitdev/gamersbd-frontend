@@ -241,7 +241,7 @@ export default function CheckoutPage() {
 
     // Prepare cart items for order
     const orderItems = items.map((item) => ({
-      product: item._id,
+      product: item._id as string,
       quantity: item.quantity,
       platform: item.platform || "PC",
       priceAtTime: item.price,

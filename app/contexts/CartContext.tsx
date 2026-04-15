@@ -5,6 +5,7 @@ import axios from "axios";
 import { toast } from "react-hot-toast";
 
 export interface CartItem {
+  _id: string;
   id: string;
   productId: string;
   name: string;
