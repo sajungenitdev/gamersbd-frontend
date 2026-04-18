@@ -1,6 +1,6 @@
 "use client";
 import React, { useState, useEffect, useMemo, useCallback } from "react";
-import { useRouter } from "next/navigation"; // ✅ Fixed: Use next/navigation instead of next/router
+import { useRouter } from "next/navigation";
 import {
   Search,
   X,
@@ -11,6 +11,12 @@ import {
   Tag,
   DollarSign,
   Package,
+  Users,
+  Sliders,
+  Sparkles,
+  TrendingUp,
+  Clock,
+  Star,
 } from "lucide-react";
 import Link from "next/link";
 import { toast, Toaster } from "react-hot-toast";
@@ -32,6 +38,7 @@ interface Category {
 interface Product {
   _id: string;
   id: string;
+  createdAt?: string;
   name: string;
   category: string | { _id: string; name: string } | null;
   price: number;
@@ -47,41 +54,36 @@ interface Product {
   slug?: string;
   platform?: string[];
   description?: string;
+  ageRange?: {
+    min: number;
+    max: number;
+  };
 }
 
-// Price ranges
-const priceRanges = [
-  { label: "Under $50", min: 0, max: 50, icon: "💰" },
-  { label: "$50 - $100", min: 50, max: 100, icon: "💵" },
-  { label: "$100 - $200", min: 100, max: 200, icon: "💵" },
-  { label: "$200 - $500", min: 200, max: 500, icon: "💸" },
-  { label: "Over $500", min: 500, max: 10000, icon: "💎" },
-];
-
-// Modern Accordion Component
+// Modern Accordion Component with single open behavior
 const ModernAccordion = ({
   title,
   children,
-  defaultOpen = true,
+  isOpen,
+  onToggle,
   count,
   icon,
 }: {
   title: string;
   children: React.ReactNode;
-  defaultOpen?: boolean;
+  isOpen: boolean;
+  onToggle: () => void;
   count?: number;
   icon?: React.ReactNode;
 }) => {
-  const [isOpen, setIsOpen] = useState(defaultOpen);
-
   return (
-    <div className="border-b border-gray-800/50 last:border-0 sidebar-filter">
+    <div className="border-b border-gray-800/50 last:border-0">
       <button
-        onClick={() => setIsOpen(!isOpen)}
-        className="w-full flex items-center justify-between py-2 text-white hover:text-purple-400 transition-all duration-200 group"
+        onClick={onToggle}
+        className="w-full flex items-center justify-between py-3 text-white hover:text-purple-400 transition-all duration-200 group"
       >
         <div className="flex items-center gap-3">
-          {icon && <span className="text-gray-500">{icon}</span>}
+          <span className="text-purple-400">{icon}</span>
           <span className="font-semibold text-sm uppercase tracking-wide">
             {title}
           </span>
@@ -101,10 +103,191 @@ const ModernAccordion = ({
       </button>
       <div
         className={`overflow-hidden transition-all duration-300 ease-in-out ${
-          isOpen ? "max-h-full opacity-100 pb-4" : "max-h-0 opacity-0"
+          isOpen ? " opacity-100 pb-4" : "max-h-0 opacity-0"
         }`}
       >
         {children}
+      </div>
+    </div>
+  );
+};
+
+// Modern Price Range Slider Component
+const PriceRangeSlider = ({
+  minPrice,
+  maxPrice,
+  onPriceChange,
+}: {
+  minPrice: number;
+  maxPrice: number;
+  onPriceChange: (min: number, max: number) => void;
+}) => {
+  const [localMin, setLocalMin] = useState(minPrice);
+  const [localMax, setLocalMax] = useState(maxPrice);
+  const absoluteMin = 0;
+  const absoluteMax = 10000;
+
+  useEffect(() => {
+    setLocalMin(minPrice);
+    setLocalMax(maxPrice);
+  }, [minPrice, maxPrice]);
+
+  const handleMinChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = Math.min(Number(e.target.value), localMax - 1);
+    setLocalMin(value);
+    onPriceChange(value, localMax);
+  };
+
+  const handleMaxChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = Math.max(Number(e.target.value), localMin + 1);
+    setLocalMax(value);
+    onPriceChange(localMin, value);
+  };
+
+  return (
+    <div className="space-y-4 mt-5">
+      <div className="relative">
+        <div className="h-1.5 bg-gray-700 rounded-full">
+          <div
+            className="absolute h-1.5 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full"
+            style={{
+              left: `${(localMin / absoluteMax) * 100}%`,
+              right: `${100 - (localMax / absoluteMax) * 100}%`,
+            }}
+          />
+        </div>
+        <input
+          type="range"
+          min={absoluteMin}
+          max={absoluteMax}
+          value={localMin}
+          onChange={handleMinChange}
+          className="absolute top-0 left-0 w-full h-1.5 bg-transparent appearance-none pointer-events-none [&::-webkit-slider-thumb]:pointer-events-auto [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:cursor-pointer [&::-webkit-slider-thumb]:shadow-lg [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-purple-500"
+        />
+        <input
+          type="range"
+          min={absoluteMin}
+          max={absoluteMax}
+          value={localMax}
+          onChange={handleMaxChange}
+          className="absolute top-0 left-0 w-full h-1.5 bg-transparent appearance-none pointer-events-none [&::-webkit-slider-thumb]:pointer-events-auto [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:cursor-pointer [&::-webkit-slider-thumb]:shadow-lg [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-purple-500"
+        />
+      </div>
+      <div className="flex justify-between items-center gap-3">
+        <div className="flex-1 bg-gray-800/50 rounded-lg px-3 py-2 border border-gray-700">
+          <span className="text-xs text-gray-500">Min</span>
+          <p className="text-white font-semibold">${localMin}</p>
+        </div>
+        <span className="text-gray-600">—</span>
+        <div className="flex-1 bg-gray-800/50 rounded-lg px-3 py-2 border border-gray-700">
+          <span className="text-xs text-gray-500">Max</span>
+          <p className="text-white font-semibold">${localMax}</p>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Quick Price Chips
+const QuickPriceChips = ({
+  onSelect,
+}: {
+  onSelect: (min: number, max: number) => void;
+}) => {
+  const chips = [
+    { label: "Under $50", min: 0, max: 50 },
+    { label: "$50-100", min: 50, max: 100 },
+    { label: "$100-200", min: 100, max: 200 },
+    { label: "$200-500", min: 200, max: 500 },
+    { label: "$500+", min: 500, max: 10000 },
+  ];
+
+  return (
+    <div className="flex flex-wrap gap-2 mt-3">
+      {chips.map((chip) => (
+        <button
+          key={chip.label}
+          onClick={() => onSelect(chip.min, chip.max)}
+          className="px-3 py-1.5 text-xs rounded-full bg-gray-800/50 text-gray-400 hover:bg-purple-600/20 hover:text-purple-400 transition-all duration-200 border border-gray-700 hover:border-purple-500/50"
+        >
+          {chip.label}
+        </button>
+      ))}
+    </div>
+  );
+};
+
+// Age Range Slider
+const AgeRangeSlider = ({
+  minAge,
+  maxAge,
+  onAgeChange,
+}: {
+  minAge: number;
+  maxAge: number;
+  onAgeChange: (min: number, max: number) => void;
+}) => {
+  const [localMin, setLocalMin] = useState(minAge);
+  const [localMax, setLocalMax] = useState(maxAge);
+  const absoluteMin = 0;
+  const absoluteMax = 100;
+
+  useEffect(() => {
+    setLocalMin(minAge);
+    setLocalMax(maxAge);
+  }, [minAge, maxAge]);
+
+  const handleMinChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = Math.min(Number(e.target.value), localMax - 1);
+    setLocalMin(value);
+    onAgeChange(value, localMax);
+  };
+
+  const handleMaxChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = Math.max(Number(e.target.value), localMin + 1);
+    setLocalMax(value);
+    onAgeChange(localMin, value);
+  };
+
+  return (
+    <div className="space-y-4 mt-5">
+      <div className="relative">
+        <div className="h-1.5 bg-gray-700 rounded-full">
+          <div
+            className="absolute h-1.5 bg-gradient-to-r from-orange-500 to-orange-500 rounded-full"
+            style={{
+              left: `${(localMin / absoluteMax) * 100}%`,
+              right: `${100 - (localMax / absoluteMax) * 100}%`,
+            }}
+          />
+        </div>
+        <input
+          type="range"
+          min={absoluteMin}
+          max={absoluteMax}
+          value={localMin}
+          onChange={handleMinChange}
+          className="absolute top-0 left-0 w-full h-1.5 bg-transparent appearance-none pointer-events-none [&::-webkit-slider-thumb]:pointer-events-auto [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:cursor-pointer [&::-webkit-slider-thumb]:shadow-lg [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-orange-500"
+        />
+        <input
+          type="range"
+          min={absoluteMin}
+          max={absoluteMax}
+          value={localMax}
+          onChange={handleMaxChange}
+          className="absolute top-0 left-0 w-full h-1.5 bg-transparent appearance-none pointer-events-none [&::-webkit-slider-thumb]:pointer-events-auto [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:cursor-pointer [&::-webkit-slider-thumb]:shadow-lg [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-orange-500"
+        />
+      </div>
+      <div className="flex justify-between items-center gap-3">
+        <div className="flex-1 bg-gray-800/50 rounded-lg px-3 py-2 border border-gray-700">
+          <span className="text-xs text-gray-500">Min Age</span>
+          <p className="text-white font-semibold">{localMin} yrs</p>
+        </div>
+        <span className="text-gray-600">—</span>
+        <div className="flex-1 bg-gray-800/50 rounded-lg px-3 py-2 border border-gray-700">
+          <span className="text-xs text-gray-500">Max Age</span>
+          <p className="text-white font-semibold">{localMax} yrs</p>
+        </div>
       </div>
     </div>
   );
@@ -155,7 +338,7 @@ const CategoryTree = ({
     setExpandedCategories((prev) =>
       prev.includes(categoryId)
         ? prev.filter((id) => id !== categoryId)
-        : [...prev, categoryId]
+        : [...prev, categoryId],
     );
   };
 
@@ -171,7 +354,7 @@ const CategoryTree = ({
         <div
           className={`flex items-center gap-2 rounded-lg transition-all duration-200 ${
             isSelected
-              ? "bg-purple-600/10 border border-purple-500/30"
+              ? "bg-gradient-to-r from-purple-600/20 to-pink-600/20 border border-purple-500/30"
               : "hover:bg-gray-800/50"
           }`}
           style={{ paddingLeft: `${paddingLeft}px` }}
@@ -218,7 +401,7 @@ const CategoryTree = ({
         {hasSubcategories && isExpanded && (
           <div className="ml-4 mt-1 space-y-1">
             {category.subcategories!.map((sub) =>
-              renderCategoryItem(sub, level + 1)
+              renderCategoryItem(sub, level + 1),
             )}
           </div>
         )}
@@ -258,7 +441,7 @@ const CategoryTree = ({
   );
 };
 
-// Product Card Component - Fixed version
+// Product Card Component
 const ProductCard = React.memo(
   ({
     product,
@@ -319,7 +502,7 @@ const ProductCard = React.memo(
     const handleBuyNow = async (e: React.MouseEvent) => {
       e.preventDefault();
       e.stopPropagation();
-      
+
       if (!product) return;
       setIsBuyingNow(true);
 
@@ -337,24 +520,24 @@ const ProductCard = React.memo(
     };
 
     return (
-      <div className="relative group overflow-hidden rounded-2xl transition-all duration-300">
+      <div className="relative group overflow-hidden rounded-2xl transition-all duration-300 hover:transform hover:scale-[1.02]">
         <Link href={`/product/${product._id}`}>
-          <div className="relative w-full aspect-square overflow-hidden rounded-2xl bg-gray-800 dark:bg-gray-200">
+          <div className="relative w-full aspect-square overflow-hidden rounded-2xl bg-gray-800">
             <img
               src={imageUrl}
               alt={product.name || "Product"}
-              className="absolute inset-0 w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-500 opacity-100"
+              className="absolute inset-0 w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-500"
               loading="lazy"
             />
 
             {discount > 0 && (
-              <div className="absolute top-3 left-3 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full z-20">
+              <div className="absolute top-3 left-3 bg-gradient-to-r from-red-500 to-pink-500 text-white text-xs font-bold px-2 py-1 rounded-full z-20 shadow-lg">
                 -{discount}%
               </div>
             )}
 
             {!product.inStock && (
-              <div className="absolute inset-0 bg-black/70 flex items-center justify-center z-20 rounded-2xl">
+              <div className="absolute inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-20 rounded-2xl">
                 <span className="px-3 py-1 bg-red-500/90 text-white text-sm rounded-full">
                   Out of Stock
                 </span>
@@ -363,12 +546,10 @@ const ProductCard = React.memo(
           </div>
 
           <div className="p-4">
-            <p className="text-sm text-gray-400 dark:text-gray-600 mb-1">
-              {categoryName}
-            </p>
+            <p className="text-sm text-gray-400 mb-1">{categoryName}</p>
 
             <div className="flex items-center justify-between">
-              <h3 className="text-lg font-semibold text-white dark:text-black line-clamp-1">
+              <h3 className="text-lg font-semibold text-white line-clamp-1">
                 {product.name || "Unnamed Product"}
               </h3>
 
@@ -379,21 +560,21 @@ const ProductCard = React.memo(
                   variant="ghost"
                   size="sm"
                   showIcon={true}
-                  className="!w-auto !rounded-full hover:bg-gray-800 dark:hover:bg-gray-200 flex items-center"
+                  className="!w-auto !rounded-full hover:bg-gray-800"
                 />
               )}
             </div>
 
             <div className="flex items-center gap-2 mt-2">
-              <span className="text-white dark:text-black font-normal text-lg">
+              <span className="text-white font-bold text-lg">
                 ${displayPrice.toFixed(2)}
               </span>
               {originalPrice > finalPrice && (
                 <>
-                  <span className="text-sm text-gray-400 dark:text-gray-600 line-through">
+                  <span className="text-sm text-gray-400 line-through">
                     ${displayOriginalPrice.toFixed(2)}
                   </span>
-                  <span className="text-xs text-[#d88616] dark:text-green-600 font-medium">
+                  <span className="text-xs text-green-400 font-medium">
                     Save ${saveAmount.toFixed(2)}
                   </span>
                 </>
@@ -404,7 +585,7 @@ const ProductCard = React.memo(
               <button
                 onClick={handleBuyNow}
                 disabled={isBuyingNow}
-                className="w-full mt-3 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white text-sm font-semibold rounded-lg transition-all duration-300 transform hover:scale-[1.02] active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full mt-3 py-2 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white text-sm font-semibold rounded-lg transition-all duration-300 transform hover:scale-[1.02] active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-purple-500/20"
               >
                 {isBuyingNow ? (
                   <Loader2 className="w-4 h-4 animate-spin mx-auto" />
@@ -424,7 +605,7 @@ const ProductCard = React.memo(
         </Link>
       </div>
     );
-  }
+  },
 );
 
 ProductCard.displayName = "ProductCard";
@@ -457,15 +638,15 @@ const QuickViewModal = ({
         onClick={onClose}
       />
       <div className="relative min-h-screen flex items-center justify-center p-4">
-        <div className="relative bg-[#2A2A2A] rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto shadow-2xl border border-gray-800">
+        <div className="relative bg-gradient-to-br from-gray-900 to-gray-800 rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto shadow-2xl border border-gray-700">
           <button
             onClick={onClose}
-            className="absolute top-4 right-4 z-10 w-10 h-10 bg-[#1a1a1a] rounded-full flex items-center justify-center hover:bg-purple-600 transition-all"
+            className="absolute top-4 right-4 z-10 w-10 h-10 bg-gray-800 rounded-full flex items-center justify-center hover:bg-purple-600 transition-all"
           >
             <X className="w-5 h-5 text-gray-300" />
           </button>
           <div className="grid md:grid-cols-2 gap-8 p-8">
-            <div className="relative aspect-square rounded-xl overflow-hidden bg-[#1a1a1a]">
+            <div className="relative aspect-square rounded-xl overflow-hidden bg-gray-800">
               <img
                 src={getImageUrl()}
                 alt={product.name || "Product"}
@@ -481,7 +662,7 @@ const QuickViewModal = ({
                   ${finalPrice?.toFixed(2) || "0.00"}
                 </span>
                 {originalPrice && originalPrice > finalPrice && (
-                  <span className=" text-gray-500 line-through">
+                  <span className="text-lg text-gray-500 line-through">
                     ${originalPrice.toFixed(2)}
                   </span>
                 )}
@@ -510,8 +691,8 @@ const QuickViewModal = ({
 
 // Skeleton Card
 const SkeletonCard = () => (
-  <div className="bg-[#2A2A2A] rounded-2xl overflow-hidden border border-gray-800 animate-pulse">
-    <div className="aspect-square bg-[#1a1a1a]" />
+  <div className="bg-gray-800 rounded-2xl overflow-hidden border border-gray-700 animate-pulse">
+    <div className="aspect-square bg-gray-700" />
     <div className="p-5 space-y-3">
       <div className="h-3 w-20 bg-gray-700 rounded" />
       <div className="h-5 w-32 bg-gray-700 rounded" />
@@ -527,17 +708,17 @@ const AllProducts = () => {
   const [loading, setLoading] = useState(true);
   const [categories, setCategories] = useState<Category[]>([]);
   const [selectedCategory, setSelectedCategory] = useState("All");
-  const [selectedPriceRange, setSelectedPriceRange] = useState<string | null>(
-    null
-  );
+  const [priceRange, setPriceRange] = useState({ min: 0, max: 10000 });
+  const [ageRange, setAgeRange] = useState({ min: 0, max: 100 });
   const [showInStockOnly, setShowInStockOnly] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState("featured");
   const [mobileFilterOpen, setMobileFilterOpen] = useState(false);
   const [quickViewProduct, setQuickViewProduct] = useState<Product | null>(
-    null
+    null,
   );
   const [mounted, setMounted] = useState(false);
+  const [openAccordion, setOpenAccordion] = useState<string>("categories");
 
   const API_URL =
     process.env.NEXT_PUBLIC_API_URL || "https://gamersbd-server.onrender.com";
@@ -569,6 +750,7 @@ const AllProducts = () => {
             inStock: (p.stock || 0) > 0,
             finalPrice: p.discountPrice || p.price,
             category: p.category || null,
+            ageRange: p.ageRange || { min: 0, max: 100 },
           }));
           setProducts(fetchedProducts);
         }
@@ -602,15 +784,19 @@ const AllProducts = () => {
       });
     }
 
-    if (selectedPriceRange) {
-      const range = priceRanges.find((r) => r.label === selectedPriceRange);
-      if (range) {
-        filtered = filtered.filter((product) => {
-          const price = product.discountPrice || product.price;
-          return price >= range.min && price <= range.max;
-        });
-      }
-    }
+    // Price range filter
+    filtered = filtered.filter((product) => {
+      const price = product.discountPrice || product.price;
+      return price >= priceRange.min && price <= priceRange.max;
+    });
+
+    // Age range filter
+    filtered = filtered.filter((product) => {
+      if (!product.ageRange) return true;
+      const productMinAge = product.ageRange.min || 0;
+      const productMaxAge = product.ageRange.max || 100;
+      return productMinAge <= ageRange.max && productMaxAge >= ageRange.min;
+    });
 
     if (showInStockOnly) {
       filtered = filtered.filter((product) => product.inStock);
@@ -618,23 +804,30 @@ const AllProducts = () => {
 
     if (searchQuery) {
       filtered = filtered.filter((product) =>
-        product.name?.toLowerCase().includes(searchQuery.toLowerCase())
+        product.name?.toLowerCase().includes(searchQuery.toLowerCase()),
       );
     }
 
     switch (sortBy) {
       case "price-low":
         filtered.sort(
-          (a, b) => (a.discountPrice || a.price) - (b.discountPrice || b.price)
+          (a, b) => (a.discountPrice || a.price) - (b.discountPrice || b.price),
         );
         break;
       case "price-high":
         filtered.sort(
-          (a, b) => (b.discountPrice || b.price) - (a.discountPrice || a.price)
+          (a, b) => (b.discountPrice || b.price) - (a.discountPrice || a.price),
         );
         break;
       case "rating":
         filtered.sort((a, b) => (b.rating || 0) - (a.rating || 0));
+        break;
+      case "newest":
+        filtered.sort(
+          (a, b) =>
+            new Date(b.createdAt || 0).getTime() -
+            new Date(a.createdAt || 0).getTime(),
+        );
         break;
     }
 
@@ -642,7 +835,8 @@ const AllProducts = () => {
   }, [
     products,
     selectedCategory,
-    selectedPriceRange,
+    priceRange,
+    ageRange,
     showInStockOnly,
     searchQuery,
     sortBy,
@@ -654,7 +848,7 @@ const AllProducts = () => {
 
       const countProductsInCategory = (
         categoryList: Category[],
-        targetName: string
+        targetName: string,
       ): number => {
         let count = 0;
         for (const cat of categoryList) {
@@ -677,26 +871,31 @@ const AllProducts = () => {
 
       return countProductsInCategory(categories, categoryName);
     },
-    [products, categories]
+    [products, categories],
   );
 
   const clearFilters = () => {
     setSelectedCategory("All");
-    setSelectedPriceRange(null);
+    setPriceRange({ min: 0, max: 10000 });
+    setAgeRange({ min: 0, max: 100 });
     setShowInStockOnly(false);
     setSearchQuery("");
+  };
+
+  const handleQuickPriceSelect = (min: number, max: number) => {
+    setPriceRange({ min, max });
   };
 
   if (!mounted) return null;
 
   return (
-    <div className="min-h-screen bg-[#1a1a1a]">
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-900 to-black">
       <Toaster position="bottom-right" />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="lg:hidden mb-4">
           <button
             onClick={() => setMobileFilterOpen(!mobileFilterOpen)}
-            className="w-full flex items-center justify-between px-4 py-3 bg-[#2A2A2A] rounded-xl text-white border border-gray-800 hover:border-purple-500/50 transition-colors"
+            className="w-full flex items-center justify-between px-4 py-3 bg-gray-800 rounded-xl text-white border border-gray-700 hover:border-purple-500/50 transition-colors"
           >
             <span className="flex items-center gap-2">
               <Filter className="w-5 h-5" />
@@ -713,45 +912,50 @@ const AllProducts = () => {
         <div className="flex flex-col lg:flex-row gap-8">
           {/* Sidebar Filters */}
           <div
-            className={`lg:w-72 flex-shrink-0 ${
+            className={`lg:w-80 flex-shrink-0 ${
               mobileFilterOpen ? "block" : "hidden lg:block"
             }`}
           >
-            <div className="bg-[#2A2A2A] rounded-2xl overflow-hidden sticky top-24 border border-gray-800">
-              <div className="px-6 py-4 border-b border-gray-800">
+            <div className="bg-gray-800/50 backdrop-blur-sm rounded-2xl overflow-hidden sticky top-24 border border-gray-700 shadow-xl">
+              <div className="px-6 py-4 border-b border-gray-700 bg-gradient-to-r from-purple-600/10 to-pink-600/10">
                 <div className="flex justify-between items-center">
                   <div className="flex items-center gap-2">
-                    <Filter className="w-5 h-5 text-purple-400" />
+                    <Sparkles className="w-5 h-5 text-purple-400" />
                     <h3 className="text-lg font-semibold text-white">
                       Filters
                     </h3>
                   </div>
                   <button
                     onClick={clearFilters}
-                    className="text-sm text-gray-400 hover:text-purple-400 transition-colors"
+                    className="text-sm text-gray-400 hover:text-purple-400 transition-colors flex items-center gap-1"
                   >
+                    <X className="w-3 h-3" />
                     Clear All
                   </button>
                 </div>
               </div>
 
-              <div className="p-6 space-y-6 pt-0">
-                <div className="mb-3">
+              <div className="p-6 space-y-4">
+                {/* Search */}
+                <div className="mb-2">
                   <div className="relative">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
                     <input
                       type="text"
-                      placeholder="Search by name..."
+                      placeholder="Search products..."
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
-                      className="w-full pl-10 pr-4 py-2.5 bg-[#1a1a1a] text-white rounded-xl border border-gray-700 focus:border-purple-500 focus:outline-none focus:ring-1 focus:ring-purple-500 transition-all"
+                      className="w-full pl-10 pr-4 py-2.5 bg-gray-900/50 text-white rounded-xl border border-gray-700 focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500/20 transition-all"
                     />
                   </div>
                 </div>
 
+                {/* Categories Accordion */}
                 <ModernAccordion
                   title="Categories"
-                  defaultOpen={true}
+                  isOpen={openAccordion === "categories"}
+                  onToggle={() => setOpenAccordion("categories")}
+                  count={getProductCountByCategory(selectedCategory)}
                   icon={<Tag className="w-4 h-4" />}
                 >
                   <CategoryTree
@@ -762,37 +966,45 @@ const AllProducts = () => {
                   />
                 </ModernAccordion>
 
+                {/* Price Range Accordion */}
                 <ModernAccordion
                   title="Price Range"
-                  defaultOpen={true}
+                  isOpen={openAccordion === "price"}
+                  onToggle={() => setOpenAccordion("price")}
                   icon={<DollarSign className="w-4 h-4" />}
                 >
-                  <div className="space-y-2">
-                    {priceRanges.map((range) => (
-                      <label
-                        key={range.label}
-                        className="flex items-center gap-3 cursor-pointer group p-2 rounded-lg hover:bg-gray-800/50 transition-colors"
-                      >
-                        <input
-                          type="radio"
-                          name="price"
-                          checked={selectedPriceRange === range.label}
-                          onChange={() => setSelectedPriceRange(range.label)}
-                          className="w-4 h-4 accent-purple-600"
-                        />
-                        <span className="text-sm text-gray-400 group-hover:text-white transition-colors flex-1">
-                          {range.label}
-                        </span>
-                      </label>
-                    ))}
+                  <div className="space-y-4">
+                    <PriceRangeSlider
+                      minPrice={priceRange.min}
+                      maxPrice={priceRange.max}
+                      onPriceChange={(min, max) => setPriceRange({ min, max })}
+                    />
+                    <QuickPriceChips onSelect={handleQuickPriceSelect} />
                   </div>
                 </ModernAccordion>
 
+                {/* Age Range Accordion */}
+                <ModernAccordion
+                  title="Age Range"
+                  isOpen={openAccordion === "age"}
+                  onToggle={() => setOpenAccordion("age")}
+                  icon={<Users className="w-4 h-4" />}
+                >
+                  <AgeRangeSlider
+                    minAge={ageRange.min}
+                    maxAge={ageRange.max}
+                    onAgeChange={(min, max) => setAgeRange({ min, max })}
+                  />
+                </ModernAccordion>
+
+                {/* Availability Accordion */}
                 <ModernAccordion
                   title="Availability"
+                  isOpen={openAccordion === "availability"}
+                  onToggle={() => setOpenAccordion("availability")}
                   icon={<Package className="w-4 h-4" />}
                 >
-                  <label className="flex items-center gap-3 cursor-pointer group p-2 rounded-lg hover:bg-gray-800/50 transition-colors">
+                  <label className="flex items-center gap-3 cursor-pointer group p-2 rounded-lg hover:bg-gray-700/50 transition-colors">
                     <input
                       type="checkbox"
                       checked={showInStockOnly}
@@ -830,24 +1042,25 @@ const AllProducts = () => {
                 <select
                   value={sortBy}
                   onChange={(e) => setSortBy(e.target.value)}
-                  className="px-4 py-2 bg-[#2A2A2A] text-white rounded-xl text-sm border border-gray-700 focus:border-purple-500 focus:outline-none cursor-pointer hover:border-purple-500/50 transition-colors"
+                  className="px-4 py-2 bg-gray-800 text-white rounded-xl text-sm border border-gray-700 focus:border-purple-500 focus:outline-none cursor-pointer hover:border-purple-500/50 transition-colors"
                 >
                   <option value="featured">✨ Featured</option>
                   <option value="price-low">💰 Price: Low to High</option>
                   <option value="price-high">💰 Price: High to Low</option>
                   <option value="rating">⭐ Top Rated</option>
+                  <option value="newest">🆕 Newest</option>
                 </select>
               </div>
             </div>
 
             {loading ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                 {[...Array(8)].map((_, i) => (
                   <SkeletonCard key={i} />
                 ))}
               </div>
             ) : filteredProducts.length > 0 ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                 {filteredProducts.map((product) => (
                   <ProductCard
                     key={product._id}
@@ -857,9 +1070,9 @@ const AllProducts = () => {
                 ))}
               </div>
             ) : (
-              <div className="text-center py-16 bg-[#2A2A2A] rounded-2xl border border-gray-800">
-                <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-gray-800 flex items-center justify-center">
-                  <Package className="w-10 h-10 text-gray-600" />
+              <div className="text-center py-16 bg-gray-800/50 backdrop-blur-sm rounded-2xl border border-gray-700">
+                <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-gray-700 flex items-center justify-center">
+                  <Package className="w-10 h-10 text-gray-500" />
                 </div>
                 <h3 className="text-xl font-semibold text-white mb-2">
                   No products found
@@ -869,7 +1082,7 @@ const AllProducts = () => {
                 </p>
                 <button
                   onClick={clearFilters}
-                  className="px-6 py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white rounded-xl transition-all shadow-lg shadow-purple-500/20"
+                  className="px-6 py-2.5 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white rounded-xl transition-all shadow-lg shadow-purple-500/20"
                 >
                   Clear All Filters
                 </button>

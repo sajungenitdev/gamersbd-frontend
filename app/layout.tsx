@@ -10,6 +10,7 @@ import { CartDebug } from "../components/CartDebug";
 import { WishlistProvider } from "./contexts/WishlistContext";
 import { OrderProvider } from "./contexts/OrderContext";
 import { CurrencyProvider } from "./contact/CurrencyContext";
+import PromotionModalManager from "../components/PromotionModal/PromotionModalManager";
 // One line to import and export metadata
 export { metadata, viewport } from "../components/metaData/metadata";
 
@@ -48,6 +49,7 @@ export default function RootLayout({
                     <Header />
                     {children}
                     <Footer />
+                    <PromotionModalManager />
                     <Toaster
                       position="bottom-right"
                       toastOptions={{
