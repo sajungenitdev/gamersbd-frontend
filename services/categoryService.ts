@@ -18,26 +18,92 @@ export interface CategoryWithSubs extends Category {
   subcategories: CategoryWithSubs[];
 }
 
+// Cache management
+const CACHE_KEY = "gamersbd_categories";
+const CACHE_TIMESTAMP_KEY = "gamersbd_categories_timestamp";
+const CACHE_DURATION = 30 * 60 * 1000; // 30 minutes cache
+
+// Helper to save to cache
+function saveToCache(categories: Category[]): void {
+  try {
+    localStorage.setItem(CACHE_KEY, JSON.stringify(categories));
+    localStorage.setItem(CACHE_TIMESTAMP_KEY, Date.now().toString());
+  } catch (error) {
+    console.warn("Failed to save categories to cache:", error);
+  }
+}
+
+// Helper to load from cache
+function loadFromCache(): Category[] | null {
+  try {
+    const cached = localStorage.getItem(CACHE_KEY);
+    const timestamp = localStorage.getItem(CACHE_TIMESTAMP_KEY);
+    
+    if (cached && timestamp) {
+      const age = Date.now() - parseInt(timestamp);
+      if (age < CACHE_DURATION) {
+        console.log(`Using cached categories (age: ${Math.round(age / 1000)}s)`);
+        return JSON.parse(cached);
+      }
+    }
+    return null;
+  } catch (error) {
+    console.warn("Failed to load categories from cache:", error);
+    return null;
+  }
+}
+
+// Helper to delay retries
+const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+// Fetch with timeout and proper abort handling
+async function fetchWithTimeout(
+  url: string,
+  timeout: number = 30000
+): Promise<Response> {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => {
+    console.warn(`Request timeout after ${timeout}ms for ${url}`);
+    controller.abort();
+  }, timeout);
+
+  try {
+    const response = await fetch(url, {
+      signal: controller.signal,
+      headers: {
+        "Accept": "application/json",
+        "Content-Type": "application/json",
+      },
+      cache: "no-cache",
+    });
+    clearTimeout(timeoutId);
+    return response;
+  } catch (error) {
+    clearTimeout(timeoutId);
+    throw error;
+  }
+}
+
 export const categoryService = {
-  // Fetch all categories with timeout and retry
+  // Fetch all categories with timeout, retry, and caching
   async getAllCategories(): Promise<Category[]> {
-    // Try up to 3 times
+    // Try to load from cache first for immediate response
+    const cachedCategories = loadFromCache();
+    if (cachedCategories && cachedCategories.length > 0) {
+      // Return cached data immediately, but still try to update in background
+      this.fetchAndUpdateCacheInBackground();
+      return cachedCategories;
+    }
+
+    // If no cache, try to fetch with retries
     for (let attempt = 1; attempt <= 3; attempt++) {
       try {
-        console.log(`Attempting to fetch categories (attempt ${attempt}/3)...`);
+        console.log(`Fetching categories (attempt ${attempt}/3)...`);
 
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 5000);
-
-        const response = await fetch(`${API_BASE_URL}/categories`, {
-          signal: controller.signal,
-          headers: {
-            Accept: "application/json",
-            "Content-Type": "application/json",
-          },
-        });
-
-        clearTimeout(timeoutId);
+        const response = await fetchWithTimeout(
+          `${API_BASE_URL}/categories`,
+          30000 // 30 second timeout
+        );
 
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
@@ -46,23 +112,63 @@ export const categoryService = {
         const data = await response.json();
 
         if (data.success && Array.isArray(data.data)) {
-          return data.data; // Return exactly what API provides
+          console.log(`Successfully fetched ${data.data.length} categories`);
+          // Save to cache
+          saveToCache(data.data);
+          return data.data;
         } else {
-          return [];
+          console.warn("API response missing success flag or data array");
+          if (attempt === 3) {
+            return [];
+          }
         }
       } catch (error) {
-        console.error(`Attempt ${attempt} failed:`, error);
+        // Don't log the full error object to avoid console pollution
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        
+        if (errorMessage.includes('aborted') || errorMessage.includes('timeout')) {
+          console.warn(`Attempt ${attempt} failed: Request timeout or aborted`);
+        } else if (errorMessage.includes('Failed to fetch')) {
+          console.warn(`Attempt ${attempt} failed: Network error - server may be unavailable`);
+        } else {
+          console.warn(`Attempt ${attempt} failed: ${errorMessage}`);
+        }
 
         if (attempt === 3) {
           console.warn("All fetch attempts failed. Returning empty array.");
           return [];
         }
 
-        await new Promise((resolve) => setTimeout(resolve, 1000 * attempt));
+        // Exponential backoff: 2s, 4s, 8s
+        const backoffDelay = 2000 * Math.pow(2, attempt - 1);
+        console.log(`Retrying in ${backoffDelay}ms...`);
+        await delay(backoffDelay);
       }
     }
 
     return [];
+  },
+
+  // Background update without blocking UI
+  async fetchAndUpdateCacheInBackground(): Promise<void> {
+    try {
+      console.log("Background fetching categories...");
+      const response = await fetchWithTimeout(
+        `${API_BASE_URL}/categories`,
+        30000
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success && Array.isArray(data.data) && data.data.length > 0) {
+          saveToCache(data.data);
+          console.log("Background update successful");
+        }
+      }
+    } catch (error) {
+      // Silently fail in background
+      console.warn("Background update failed");
+    }
   },
 
   // Build category tree based on parent field
@@ -95,7 +201,7 @@ export const categoryService = {
         .filter((sub) => sub.parent && sub.parent._id === root._id)
         .map((sub) => ({
           ...sub,
-          subcategories: [], // Subcategories can have their own subs (level 2)
+          subcategories: [],
         }));
 
       // Handle level 2 subcategories (subcategories of subcategories)

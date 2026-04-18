@@ -127,7 +127,7 @@ export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [isLoading, setIsLoading] = useState(false);
   const { token, user } = useUserAuth();
 
-  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://gamersbd-server.onrender.com';
 
   const getAuthHeaders = () => ({
     headers: { 
@@ -405,7 +405,7 @@ export const useOrderStats = () => {
   const [stats, setStats] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);
   const { token } = useUserAuth();
-  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://gamersbd-server.onrender.com';
 
   const getOrderStats = async () => {
     setIsLoading(true);

@@ -166,7 +166,7 @@ export const UserAuthProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const router = useRouter();
 
   // API URL from environment or default
-  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://gamersbd-server.onrender.com';
 
   // Helper function to get auth headers
   const getAuthHeaders = () => {

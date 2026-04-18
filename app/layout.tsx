@@ -11,7 +11,7 @@ import { WishlistProvider } from "./contexts/WishlistContext";
 import { OrderProvider } from "./contexts/OrderContext";
 import { CurrencyProvider } from "./contact/CurrencyContext";
 // One line to import and export metadata
-export { metadata } from "../components/metaData/metadata";
+export { metadata, viewport } from "../components/metaData/metadata";
 
 // Configure Lato (with multiple weights)
 const lato = Lato({

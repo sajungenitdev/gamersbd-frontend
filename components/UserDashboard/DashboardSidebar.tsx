@@ -66,8 +66,8 @@ const DashboardSidebar = ({ user }: DashboardSidebarProps) => {
       id: "wishlist",
       label: "Wishlist",
       icon: Heart,
-      href: "/dashboard/wishlist",
-      paths: ["/dashboard/wishlist", "/wishlist"],
+      href: "/wishlist",
+      paths: ["/wishlist", "/wishlist"],
     },
   ];
 

@@ -1,5 +1,5 @@
-// config/metadata.ts
-import { Metadata } from "next";
+// components/metaData/metadata.ts
+import { Metadata, Viewport } from "next";
 
 interface SiteConfig {
   name: string;
@@ -26,7 +26,6 @@ interface SiteConfig {
   };
 }
 
-// ✅ First export - KEEP THIS
 export const siteConfig: SiteConfig = {
   name: "GamersBD - Your Ultimate Gaming Destination",
   shortName: "GBD",
@@ -64,7 +63,18 @@ export const siteConfig: SiteConfig = {
   },
 };
 
-// ✅ Second export - KEEP THIS
+// ✅ Separate viewport export (required for Next.js 15+)
+export const viewport: Viewport = {
+  themeColor: siteConfig.themeColor,
+  colorScheme: "light dark",
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 5,
+  userScalable: true,
+  viewportFit: "cover",
+};
+
+// ✅ Metadata without themeColor, colorScheme, and viewport
 export const metadata: Metadata = {
   // Basic Metadata
   title: {
@@ -129,11 +139,6 @@ export const metadata: Metadata = {
     site: siteConfig.twitterHandle,
   },
 
-  // Facebook
-//   facebook: {
-//     appId: siteConfig.facebookAppId,
-//   },
-
   // Robots
   robots: {
     index: true,
@@ -180,10 +185,6 @@ export const metadata: Metadata = {
   // Manifest for PWA
   manifest: "/manifest.json",
 
-  // Theme
-  themeColor: siteConfig.themeColor,
-  colorScheme: "light dark",
-
   // Apple Web App
   appleWebApp: {
     capable: true,
@@ -198,21 +199,11 @@ export const metadata: Metadata = {
     ],
   },
 
-  // Viewport
-  viewport: {
-    width: "device-width",
-    initialScale: 1,
-    maximumScale: 5,
-    userScalable: true,
-    viewportFit: "cover",
-  },
-
   // Verification
   verification: {
     google: siteConfig.googleVerification,
     yandex: siteConfig.yandexVerification,
     other: {
-    //   "msvalidate.01": siteConfig.bingVerification,
       "facebook-domain-verification": "your-facebook-domain-verification",
     },
   },
@@ -291,7 +282,7 @@ export function generateCategoryMetadata(
       url: `${siteConfig.url}${categoryPath}`,
       images: [
         {
-          url: `${siteConfig.url}/images/categories/${categoryName.toLowerCase().replace(/\s+/g, '-')}.jpg`,
+          url: `${siteConfig.url}/images/categories/${categoryName.toLowerCase().replace(/\s+/g, "-")}.jpg`,
           width: 1200,
           height: 630,
           alt: categoryName,
@@ -322,6 +313,3 @@ export function generateProductMetadata(
     },
   };
 }
-
-// 🗑️ REMOVE THIS LINE AT THE BOTTOM:
-// export { siteConfig };

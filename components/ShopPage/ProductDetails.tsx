@@ -119,7 +119,7 @@ const ProductDetails = () => {
   const API_URL =
     process.env.NEXT_PUBLIC_API_URL || "https://gamersbd-server.onrender.com";
 
-  // Memoized values - add safety checks
+  // Memoized values
   const finalPrice = useMemo(
     () => product?.discountPrice || product?.price || 0,
     [product],
@@ -172,7 +172,6 @@ const ProductDetails = () => {
           setSelectedImage(0);
           setQuantity(1);
 
-          // Update page title
           document.title = `${productData.name} | GamersBD`;
         } else {
           toast.error("Product not found");
@@ -190,10 +189,9 @@ const ProductDetails = () => {
     fetchProduct();
   }, [productId, API_URL, router]);
 
-  // Fetch related products - ADDED MORE SAFETY CHECKS
+  // Fetch related products
   useEffect(() => {
     const fetchRelatedProducts = async () => {
-      // SAFETY CHECK: Ensure product exists and has _id
       if (!product || !product._id) return;
 
       try {
@@ -240,9 +238,7 @@ const ProductDetails = () => {
     }
   }, [product, API_URL]);
 
-  // Fetch reviews - ADDED SAFETY CHECK
-  // Replace your existing fetchReviews useEffect with this:
-
+  // Fetch reviews - FIXED: Handle duplicate keys
   useEffect(() => {
     const fetchReviews = async () => {
       if (!product || !product._id) return;
@@ -257,19 +253,24 @@ const ProductDetails = () => {
           },
         );
 
-        // Handle empty reviews properly
         if (response.data.success) {
-          setReviews(response.data.data || []); // Ensure it's always an array
+          const reviewsData = response.data.data || [];
+          // Ensure unique IDs and filter out any with missing _id
+          const uniqueReviews = reviewsData.filter(
+            (review: Review, index: number, self: Review[]) =>
+              review._id && 
+              self.findIndex((r: Review) => r._id === review._id) === index
+          );
+          setReviews(uniqueReviews);
         } else {
           setReviews([]);
         }
       } catch (error: any) {
         console.error("Failed to fetch reviews:", error);
-        // Don't show error toast for 404 or empty reviews
         if (error.response?.status !== 404) {
           toast.error("Failed to load reviews. Please try again later.");
         }
-        setReviews([]); // Always set to empty array on error
+        setReviews([]);
       } finally {
         setIsLoadingReviews(false);
       }
@@ -326,8 +327,6 @@ const ProductDetails = () => {
     }
   }, [quantity]);
 
-  // In your ProductDetails component, the handleAddToWishlist function should be:
-
   const handleAddToWishlist = async () => {
     if (!product || !product._id) {
       toast.error("Product not available");
@@ -344,18 +343,15 @@ const ProductDetails = () => {
 
     try {
       if (isWishlisted && wishlistItemId) {
-        // Remove from wishlist
         const success = await removeFromWishlist(wishlistItemId);
         if (success) {
           setIsWishlisted(false);
           setWishlistItemId(null);
         }
       } else {
-        // Add to wishlist - this will now work correctly
         const success = await addToWishlist(product._id);
         if (success) {
           setIsWishlisted(true);
-          // Get the new item ID from the updated wishlist
           const newItem = wishlist?.items.find(
             (item) => item.product._id === product._id,
           );
@@ -373,7 +369,6 @@ const ProductDetails = () => {
   };
 
   const handleShare = async () => {
-    // SAFETY CHECK
     if (!product) return;
 
     const url = window.location.href;
@@ -398,7 +393,6 @@ const ProductDetails = () => {
   };
 
   const handleBuyNow = async () => {
-    // SAFETY CHECK
     if (!product || !product._id) return;
 
     const cartProduct = {
@@ -533,7 +527,7 @@ const ProductDetails = () => {
               <div className="flex gap-3 overflow-x-auto pb-2">
                 {product.images.map((img, index) => (
                   <button
-                    key={index}
+                    key={`thumbnail-${index}-${img.slice(0, 20)}`} // FIXED: Unique key for thumbnails
                     onClick={() => {
                       setSelectedImage(index);
                       setImageLoaded(false);
@@ -888,9 +882,9 @@ const ProductDetails = () => {
                     </div>
 
                     <div className="space-y-4">
-                      {reviews.map((review) => (
+                      {reviews.map((review, index) => (
                         <div
-                          key={review._id}
+                          key={review._id ? review._id : `review-${index}-${review.createdAt}`} // FIXED: Ensures unique key
                           className="p-4 bg-[#2A2A2A] rounded-xl"
                         >
                           <div className="flex items-center justify-between mb-2 flex-wrap gap-2">
@@ -929,7 +923,7 @@ const ProductDetails = () => {
 
                           <p className="text-gray-300 mt-2">{review.comment}</p>
 
-                          {/* Display images - FIXED: Check if images exist and are valid */}
+                          {/* Display images */}
                           {review.images &&
                             Array.isArray(review.images) &&
                             review.images.length > 0 && (
@@ -937,19 +931,9 @@ const ProductDetails = () => {
                                 {review.images.map((img, idx) =>
                                   img &&
                                   typeof img === "string" &&
-                                  img.startsWith("data:image") ? (
+                                  (img.startsWith("data:image") || img.startsWith("http")) ? (
                                     <img
-                                      key={idx}
-                                      src={img}
-                                      alt={`Review image ${idx + 1}`}
-                                      className="w-20 h-20 rounded-lg object-cover cursor-pointer hover:opacity-80 transition border border-gray-600"
-                                      onClick={() => window.open(img, "_blank")}
-                                    />
-                                  ) : img &&
-                                    typeof img === "string" &&
-                                    img.startsWith("http") ? (
-                                    <img
-                                      key={idx}
+                                      key={`review-img-${review._id}-${idx}`} // FIXED: Unique key for review images
                                       src={img}
                                       alt={`Review image ${idx + 1}`}
                                       className="w-20 h-20 rounded-lg object-cover cursor-pointer hover:opacity-80 transition border border-gray-600"

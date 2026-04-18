@@ -235,7 +235,7 @@ export default function UserProfile() {
         updateData.avatar = avatarBase64;
       }
 
-      const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://gamersbd-server.onrender.com";
 
       const response = await fetch(`${API_URL}/api/auth/profile`, {
         method: "PUT",
