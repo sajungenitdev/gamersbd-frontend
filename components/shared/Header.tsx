@@ -244,7 +244,6 @@ export default function Header() {
   };
 
   const handleMouseEnter = (dropdown: string) => {
-    console.log("Mouse entered:", dropdown);
     if (dropdownTimerRef.current) {
       clearTimeout(dropdownTimerRef.current);
     }
@@ -259,7 +258,6 @@ export default function Header() {
   };
 
   const handleMouseLeave = () => {
-    console.log("Mouse left");
     dropdownTimerRef.current = setTimeout(() => {
       setActiveDropdown(null);
     }, 150);
