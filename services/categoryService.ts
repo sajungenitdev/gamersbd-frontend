@@ -1,5 +1,5 @@
 // services/categoryService.ts
-const API_BASE_URL = "https://gamersbd-server.onrender.com/api";
+const API_BASE_URL = "https://gamersbd-server.onrender.com";
 
 export interface Category {
   _id: string;
@@ -21,7 +21,7 @@ export interface CategoryWithSubs extends Category {
 // Cache management
 const CACHE_KEY = "gamersbd_categories";
 const CACHE_TIMESTAMP_KEY = "gamersbd_categories_timestamp";
-const CACHE_DURATION = 30 * 60 * 1000; // 30 minutes cache
+const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes cache
 
 // Helper to save to cache
 function saveToCache(categories: Category[]): void {
@@ -38,11 +38,13 @@ function loadFromCache(): Category[] | null {
   try {
     const cached = localStorage.getItem(CACHE_KEY);
     const timestamp = localStorage.getItem(CACHE_TIMESTAMP_KEY);
-    
+
     if (cached && timestamp) {
       const age = Date.now() - parseInt(timestamp);
       if (age < CACHE_DURATION) {
-        console.log(`Using cached categories (age: ${Math.round(age / 1000)}s)`);
+        console.log(
+          `Using cached categories (age: ${Math.round(age / 1000)}s)`,
+        );
         return JSON.parse(cached);
       }
     }
@@ -54,12 +56,13 @@ function loadFromCache(): Category[] | null {
 }
 
 // Helper to delay retries
-const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 // Fetch with timeout and proper abort handling
 async function fetchWithTimeout(
   url: string,
-  timeout: number = 30000
+  timeout: number = 10000, // Reduced to 10 seconds
+  signal?: AbortSignal,
 ): Promise<Response> {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => {
@@ -69,9 +72,9 @@ async function fetchWithTimeout(
 
   try {
     const response = await fetch(url, {
-      signal: controller.signal,
+      signal: signal || controller.signal,
       headers: {
-        "Accept": "application/json",
+        Accept: "application/json",
         "Content-Type": "application/json",
       },
       cache: "no-cache",
@@ -86,23 +89,27 @@ async function fetchWithTimeout(
 
 export const categoryService = {
   // Fetch all categories with timeout, retry, and caching
-  async getAllCategories(): Promise<Category[]> {
+  async getAllCategories(options?: {
+    signal?: AbortSignal;
+  }): Promise<Category[]> {
     // Try to load from cache first for immediate response
     const cachedCategories = loadFromCache();
     if (cachedCategories && cachedCategories.length > 0) {
       // Return cached data immediately, but still try to update in background
-      this.fetchAndUpdateCacheInBackground();
+      this.fetchAndUpdateCacheInBackground().catch(console.error);
       return cachedCategories;
     }
 
     // If no cache, try to fetch with retries
-    for (let attempt = 1; attempt <= 3; attempt++) {
+    for (let attempt = 1; attempt <= 2; attempt++) {
+      // Reduced retries to 2
       try {
-        console.log(`Fetching categories (attempt ${attempt}/3)...`);
+        console.log(`Fetching categories (attempt ${attempt}/2)...`);
 
         const response = await fetchWithTimeout(
-          `${API_BASE_URL}/categories`,
-          30000 // 30 second timeout
+          `${API_BASE_URL}/api/categories`,
+          10000, // 10 second timeout
+          options?.signal,
         );
 
         if (!response.ok) {
@@ -111,36 +118,64 @@ export const categoryService = {
 
         const data = await response.json();
 
+        // Handle different API response structures
+        let categoriesData: Category[] = [];
+
         if (data.success && Array.isArray(data.data)) {
-          console.log(`Successfully fetched ${data.data.length} categories`);
-          // Save to cache
-          saveToCache(data.data);
-          return data.data;
+          // Standard format: { success: true, data: [...] }
+          categoriesData = data.data;
+        } else if (Array.isArray(data)) {
+          // Direct array format
+          categoriesData = data;
+        } else if (data.data && Array.isArray(data.data)) {
+          // Nested data format
+          categoriesData = data.data;
         } else {
-          console.warn("API response missing success flag or data array");
-          if (attempt === 3) {
+          console.warn("Unknown API response format:", Object.keys(data));
+          if (attempt === 2) {
+            return [];
+          }
+          continue;
+        }
+
+        if (categoriesData.length > 0) {
+          console.log(
+            `Successfully fetched ${categoriesData.length} categories`,
+          );
+          // Save to cache
+          saveToCache(categoriesData);
+          return categoriesData;
+        } else {
+          console.warn("API returned empty categories array");
+          if (attempt === 2) {
             return [];
           }
         }
       } catch (error) {
         // Don't log the full error object to avoid console pollution
-        const errorMessage = error instanceof Error ? error.message : String(error);
-        
-        if (errorMessage.includes('aborted') || errorMessage.includes('timeout')) {
+        const errorMessage =
+          error instanceof Error ? error.message : String(error);
+
+        if (
+          errorMessage.includes("aborted") ||
+          errorMessage.includes("timeout")
+        ) {
           console.warn(`Attempt ${attempt} failed: Request timeout or aborted`);
-        } else if (errorMessage.includes('Failed to fetch')) {
-          console.warn(`Attempt ${attempt} failed: Network error - server may be unavailable`);
+        } else if (errorMessage.includes("Failed to fetch")) {
+          console.warn(
+            `Attempt ${attempt} failed: Network error - server may be unavailable`,
+          );
         } else {
           console.warn(`Attempt ${attempt} failed: ${errorMessage}`);
         }
 
-        if (attempt === 3) {
+        if (attempt === 2) {
           console.warn("All fetch attempts failed. Returning empty array.");
           return [];
         }
 
-        // Exponential backoff: 2s, 4s, 8s
-        const backoffDelay = 2000 * Math.pow(2, attempt - 1);
+        // Exponential backoff: 1s, 2s
+        const backoffDelay = 1000 * Math.pow(2, attempt - 1);
         console.log(`Retrying in ${backoffDelay}ms...`);
         await delay(backoffDelay);
       }
@@ -154,14 +189,24 @@ export const categoryService = {
     try {
       console.log("Background fetching categories...");
       const response = await fetchWithTimeout(
-        `${API_BASE_URL}/categories`,
-        30000
+        `${API_BASE_URL}/api/categories`,
+        10000, // 10 second timeout
       );
 
       if (response.ok) {
         const data = await response.json();
-        if (data.success && Array.isArray(data.data) && data.data.length > 0) {
-          saveToCache(data.data);
+
+        let categoriesData: Category[] = [];
+        if (data.success && Array.isArray(data.data)) {
+          categoriesData = data.data;
+        } else if (Array.isArray(data)) {
+          categoriesData = data;
+        } else if (data.data && Array.isArray(data.data)) {
+          categoriesData = data.data;
+        }
+
+        if (categoriesData.length > 0) {
+          saveToCache(categoriesData);
           console.log("Background update successful");
         }
       }
@@ -177,60 +222,51 @@ export const categoryService = {
       return [];
     }
 
-    // First, separate root categories (parent = null) from subcategories
-    const rootCategories: CategoryWithSubs[] = [];
-    const subCategories: Category[] = [];
+    // Create a map for quick lookup
+    const categoryMap = new Map<string, CategoryWithSubs>();
 
-    // Separate roots and subs
+    // First, create all categories in the map
     categories.forEach((cat) => {
-      if (!cat.parent) {
-        // This is a root category
-        rootCategories.push({
-          ...cat,
-          subcategories: [],
-        });
+      categoryMap.set(cat._id, {
+        ...cat,
+        subcategories: [],
+      });
+    });
+
+    // Build the tree
+    const roots: CategoryWithSubs[] = [];
+
+    categories.forEach((cat) => {
+      const node = categoryMap.get(cat._id);
+      if (!node) return;
+
+      if (cat.parent && cat.parent._id) {
+        const parent = categoryMap.get(cat.parent._id);
+        if (parent) {
+          parent.subcategories.push(node);
+        } else {
+          // Parent not found, treat as root
+          roots.push(node);
+        }
       } else {
-        // This is a subcategory
-        subCategories.push(cat);
+        // No parent, this is a root category
+        roots.push(node);
       }
     });
 
-    // Build the hierarchy by matching subcategories to their parents
-    rootCategories.forEach((root) => {
-      root.subcategories = subCategories
-        .filter((sub) => sub.parent && sub.parent._id === root._id)
-        .map((sub) => ({
-          ...sub,
-          subcategories: [],
-        }));
+    // Sort all levels alphabetically
+    const sortCategories = (items: CategoryWithSubs[]) => {
+      items.sort((a, b) => a.name.localeCompare(b.name));
+      items.forEach((item) => {
+        if (item.subcategories.length > 0) {
+          sortCategories(item.subcategories);
+        }
+      });
+    };
 
-      // Handle level 2 subcategories (subcategories of subcategories)
-      if (root.subcategories.length > 0) {
-        root.subcategories.forEach((sub) => {
-          sub.subcategories = subCategories
-            .filter((s) => s.parent && s.parent._id === sub._id)
-            .map((s) => ({
-              ...s,
-              subcategories: [],
-            }));
-        });
-      }
-    });
+    sortCategories(roots);
 
-    // Sort alphabetically by name
-    rootCategories.sort((a, b) => a.name.localeCompare(b.name));
-    rootCategories.forEach((root) => {
-      if (root.subcategories.length > 0) {
-        root.subcategories.sort((a, b) => a.name.localeCompare(b.name));
-        root.subcategories.forEach((sub) => {
-          if (sub.subcategories.length > 0) {
-            sub.subcategories.sort((a, b) => a.name.localeCompare(b.name));
-          }
-        });
-      }
-    });
-
-    return rootCategories;
+    return roots;
   },
 
   // Get root categories (parent = null)
@@ -259,5 +295,16 @@ export const categoryService = {
     name: string,
   ): Category | undefined {
     return categories.find((cat) => cat.name === name);
+  },
+
+  // Clear cache manually if needed
+  clearCache(): void {
+    try {
+      localStorage.removeItem(CACHE_KEY);
+      localStorage.removeItem(CACHE_TIMESTAMP_KEY);
+      console.log("Categories cache cleared");
+    } catch (error) {
+      console.warn("Failed to clear cache:", error);
+    }
   },
 };

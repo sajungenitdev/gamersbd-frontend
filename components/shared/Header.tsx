@@ -1,7 +1,7 @@
 // components/Header.tsx
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { categoryService } from "../../services/categoryService";
@@ -13,6 +13,10 @@ import SpecializedDropdown from "./navigation/SpecializedDropdown";
 import OffersDropdown from "./navigation/OffersDropdown";
 import MobileMenu from "./navigation/MobileMenu";
 
+// Cache duration (5 minutes)
+const CACHE_DURATION = 5 * 60 * 1000;
+const STORAGE_KEY = "cached_categories";
+
 export default function Header() {
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -21,26 +25,24 @@ export default function Header() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isSticky, setIsSticky] = useState(false);
-  const [isDarkMode, setIsDarkMode] = useState(false); // Add state for dark mode
+  const [isDarkMode, setIsDarkMode] = useState(false);
   const dropdownTimerRef = useRef<NodeJS.Timeout | null>(null);
   const headerRef = useRef<HTMLDivElement>(null);
   const mainHeaderRef = useRef<HTMLDivElement>(null);
   const topBarRef = useRef<HTMLDivElement>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   // Check and watch for theme changes
   useEffect(() => {
     const checkTheme = () => {
-      // Check for data-theme attribute (daisyui) or dark class (Tailwind)
       const isDark =
         document.documentElement.getAttribute("data-theme") === "dark" ||
         document.documentElement.classList.contains("dark");
       setIsDarkMode(isDark);
     };
 
-    // Initial check
     checkTheme();
 
-    // Listen for theme changes
     const observer = new MutationObserver((mutations) => {
       mutations.forEach((mutation) => {
         if (
@@ -59,52 +61,146 @@ export default function Header() {
     return () => observer.disconnect();
   }, []);
 
-  // Fetch categories on component mount
-  useEffect(() => {
-    const fetchCategories = async () => {
-      setLoading(true);
-      setError(null);
-
-      try {
-        const data = await categoryService.getAllCategories();
-
-        if (data && data.length > 0) {
-          const tree = categoryService.buildCategoryTree(data);
-          setCategories(tree);
-
-          if (tree.length > 0) {
-            setActiveCategoryTab(tree[0].name);
+  // Load cached categories immediately
+  const loadCachedCategories = useCallback(() => {
+    try {
+      const cached = localStorage.getItem(STORAGE_KEY);
+      if (cached) {
+        const { data, timestamp } = JSON.parse(cached);
+        const isExpired = Date.now() - timestamp > CACHE_DURATION;
+        
+        if (!isExpired && data && data.length > 0) {
+          setCategories(data);
+          if (data.length > 0 && !activeCategoryTab) {
+            setActiveCategoryTab(data[0].name);
           }
-        } else {
-          setCategories([]);
+          setLoading(false);
+          return true;
         }
-      } catch (err) {
-        console.error("Error in fetchCategories:", err);
-        setError("Failed to load categories");
+      }
+    } catch (err) {
+      console.error("Error loading cached categories:", err);
+    }
+    return false;
+  }, [activeCategoryTab]);
+
+  // Fetch categories with optimization
+  const fetchCategories = useCallback(async (skipCache = false) => {
+    // Don't fetch if we already have categories and not forcing refresh
+    if (!skipCache && categories.length > 0) {
+      return;
+    }
+
+    // Cancel previous request if exists
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+
+    abortControllerRef.current = new AbortController();
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      // Set a timeout for the fetch (15 seconds instead of 30)
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error("Request timeout")), 15000);
+      });
+
+      const fetchPromise = categoryService.getAllCategories({
+        signal: abortControllerRef.current.signal
+      });
+
+      const data = await Promise.race([fetchPromise, timeoutPromise]) as any[];
+
+      if (data && data.length > 0) {
+        const tree = categoryService.buildCategoryTree(data);
+        setCategories(tree);
+        
+        // Cache the data
+        try {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify({
+            data: tree,
+            timestamp: Date.now()
+          }));
+        } catch (err) {
+          console.error("Error caching categories:", err);
+        }
+
+        if (tree.length > 0 && !activeCategoryTab) {
+          setActiveCategoryTab(tree[0].name);
+        }
+      } else {
         setCategories([]);
-      } finally {
-        setLoading(false);
       }
-    };
+    } catch (err: any) {
+      if (err.name === "AbortError") {
+        console.log("Fetch aborted");
+        return;
+      }
+      
+      console.error("Error in fetchCategories:", err);
+      setError("Failed to load categories");
+      
+      // Try to use cached data even if expired
+      try {
+        const cached = localStorage.getItem(STORAGE_KEY);
+        if (cached) {
+          const { data } = JSON.parse(cached);
+          if (data && data.length > 0) {
+            setCategories(data);
+            setError(null); // Clear error since we have cached data
+            console.log("Using expired cached categories as fallback");
+          }
+        }
+      } catch (cacheErr) {
+        console.error("Error loading fallback cache:", cacheErr);
+      }
+    } finally {
+      setLoading(false);
+    }
+  }, [categories.length, activeCategoryTab]);
 
-    fetchCategories();
-  }, []);
-
-  // Handle scroll for sticky header
+  // Load categories on mount with priority
   useEffect(() => {
-    const handleScroll = () => {
-      if (mainHeaderRef.current && topBarRef.current) {
-        const topBarHeight = topBarRef.current.clientHeight;
-        const scrollPosition = window.scrollY;
+    // First try to load from cache immediately (synchronous)
+    const hasCache = loadCachedCategories();
+    
+    // Then fetch fresh data in background (don't await)
+    if (!hasCache) {
+      fetchCategories();
+    } else {
+      // Still fetch fresh data in background but don't show loading
+      fetchCategories(true).catch(console.error);
+    }
 
-        // Make header sticky when scrolled past the top bar
-        setIsSticky(scrollPosition > topBarHeight);
+    // Cleanup function
+    return () => {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+    };
+  }, [loadCachedCategories, fetchCategories]);
+
+  // Handle scroll for sticky header with throttling
+  useEffect(() => {
+    let ticking = false;
+    
+    const handleScroll = () => {
+      if (!ticking) {
+        requestAnimationFrame(() => {
+          if (mainHeaderRef.current && topBarRef.current) {
+            const topBarHeight = topBarRef.current.clientHeight;
+            const scrollPosition = window.scrollY;
+            setIsSticky(scrollPosition > topBarHeight);
+          }
+          ticking = false;
+        });
+        ticking = true;
       }
     };
 
-    window.addEventListener("scroll", handleScroll);
-
-    // Initial check
+    window.addEventListener("scroll", handleScroll, { passive: true });
     handleScroll();
 
     return () => {
@@ -112,7 +208,8 @@ export default function Header() {
     };
   }, []);
 
-  const specialized = [
+  // Memoized data to prevent unnecessary re-renders
+  const specialized = useMemo(() => [
     {
       name: "Gaming PCs",
       href: "/specialized/gaming-pcs",
@@ -161,9 +258,9 @@ export default function Header() {
       icon: "🔌",
       description: "Gaming peripherals",
     },
-  ];
+  ], []);
 
-  const offers = [
+  const offers = useMemo(() => [
     {
       name: "Today's Deals",
       href: "/offers/todays-deals",
@@ -220,7 +317,7 @@ export default function Header() {
       description: "Season specials",
       discount: "Up to 70% off",
     },
-  ];
+  ], []);
 
   // Close dropdowns when clicking outside
   useEffect(() => {
@@ -238,12 +335,11 @@ export default function Header() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // Function to close all dropdowns
-  const closeAllDropdowns = () => {
+  const closeAllDropdowns = useCallback(() => {
     setActiveDropdown(null);
-  };
+  }, []);
 
-  const handleMouseEnter = (dropdown: string) => {
+  const handleMouseEnter = useCallback((dropdown: string) => {
     if (dropdownTimerRef.current) {
       clearTimeout(dropdownTimerRef.current);
     }
@@ -255,22 +351,26 @@ export default function Header() {
     ) {
       setActiveCategoryTab(categories[0].name);
     }
-  };
+  }, [categories.length, activeCategoryTab]);
 
-  const handleMouseLeave = () => {
+  const handleMouseLeave = useCallback(() => {
     dropdownTimerRef.current = setTimeout(() => {
       setActiveDropdown(null);
     }, 150);
-  };
+  }, []);
+
+  // Preload dropdown content on hover (lazy loading)
+  const handleCategoriesHover = useCallback(() => {
+    handleMouseEnter("categories");
+    // Pre-fetch any additional data if needed
+  }, [handleMouseEnter]);
 
   return (
     <header ref={headerRef} className="relative">
-      {/* TopBar with ref */}
       <div ref={topBarRef}>
         <TopBar />
       </div>
 
-      {/* Main Header - Sticky */}
       <div
         ref={mainHeaderRef}
         className={`bg-[#191919] dark:bg-white shadow-sm transition-all duration-300 border-b border-gray-800 dark:border-gray-200 ${
@@ -285,7 +385,6 @@ export default function Header() {
       >
         <div className="max-w-7xl mx-auto">
           <div className="navbar py-3 px-0 min-h-[73px]">
-            {/* Left side - Logo and Categories dropdown */}
             <div className="navbar-start flex items-center gap-2">
               <button
                 className="btn btn-ghost lg:hidden text-white dark:text-gray-900"
@@ -308,7 +407,6 @@ export default function Header() {
                 </svg>
               </button>
 
-              {/* Dynamic Logo based on theme */}
               <Link href="/" className="p-0 pt-2 flex items-center">
                 <Image
                   src={
@@ -324,10 +422,9 @@ export default function Header() {
                 />
               </Link>
 
-              {/* Categories Dropdown Trigger - Only visible on desktop */}
               <div
                 className="hidden lg:block"
-                onMouseEnter={() => handleMouseEnter("categories")}
+                onMouseEnter={handleCategoriesHover}
                 onMouseLeave={handleMouseLeave}
               >
                 <button
@@ -370,14 +467,9 @@ export default function Header() {
               </div>
             </div>
 
-            {/* Center - Empty (or can be used for something else) */}
-            <div className="navbar-center hidden lg:flex">
-              {/* This space is intentionally left empty */}
-            </div>
+            <div className="navbar-center hidden lg:flex" />
 
-            {/* Right side - Navigation and Search */}
             <div className="navbar-end flex items-center gap-2">
-              {/* Desktop Navigation (Specialized, Offers, Contact) */}
               <div className="hidden lg:block">
                 <DesktopNav
                   activeDropdown={activeDropdown}
@@ -392,13 +484,10 @@ export default function Header() {
         </div>
       </div>
 
-      {/* Spacer to prevent content jump when header becomes sticky - Only visible when sticky */}
       {isSticky && (
         <div className="h-[73px] w-full bg-[#191919] dark:bg-white" />
       )}
 
-      {/* Dropdown Container - Fixed positioning when sticky */}
-      {/* Dropdown Container */}
       {(activeDropdown === "categories" ||
         activeDropdown === "specialized" ||
         activeDropdown === "offers") && (
@@ -450,7 +539,6 @@ export default function Header() {
         onClose={() => setIsMobileMenuOpen(false)}
       />
 
-      {/* Add custom animation styles */}
       <style jsx>{`
         @keyframes slideDown {
           from {
