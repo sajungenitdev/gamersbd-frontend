@@ -1,7 +1,7 @@
 // components/Header.tsx
 "use client";
 
-import { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { categoryService } from "../../services/categoryService";
@@ -13,10 +13,6 @@ import SpecializedDropdown from "./navigation/SpecializedDropdown";
 import OffersDropdown from "./navigation/OffersDropdown";
 import MobileMenu from "./navigation/MobileMenu";
 
-// Cache duration (5 minutes)
-const CACHE_DURATION = 5 * 60 * 1000;
-const STORAGE_KEY = "cached_categories";
-
 export default function Header() {
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -25,24 +21,26 @@ export default function Header() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isSticky, setIsSticky] = useState(false);
-  const [isDarkMode, setIsDarkMode] = useState(false);
+  const [isDarkMode, setIsDarkMode] = useState(false); // Add state for dark mode
   const dropdownTimerRef = useRef<NodeJS.Timeout | null>(null);
   const headerRef = useRef<HTMLDivElement>(null);
   const mainHeaderRef = useRef<HTMLDivElement>(null);
   const topBarRef = useRef<HTMLDivElement>(null);
-  const abortControllerRef = useRef<AbortController | null>(null);
 
   // Check and watch for theme changes
   useEffect(() => {
     const checkTheme = () => {
+      // Check for data-theme attribute (daisyui) or dark class (Tailwind)
       const isDark =
         document.documentElement.getAttribute("data-theme") === "dark" ||
         document.documentElement.classList.contains("dark");
       setIsDarkMode(isDark);
     };
 
+    // Initial check
     checkTheme();
 
+    // Listen for theme changes
     const observer = new MutationObserver((mutations) => {
       mutations.forEach((mutation) => {
         if (
@@ -61,146 +59,64 @@ export default function Header() {
     return () => observer.disconnect();
   }, []);
 
-  // Load cached categories immediately
-  const loadCachedCategories = useCallback(() => {
-    try {
-      const cached = localStorage.getItem(STORAGE_KEY);
-      if (cached) {
-        const { data, timestamp } = JSON.parse(cached);
-        const isExpired = Date.now() - timestamp > CACHE_DURATION;
-        
-        if (!isExpired && data && data.length > 0) {
-          setCategories(data);
-          if (data.length > 0 && !activeCategoryTab) {
-            setActiveCategoryTab(data[0].name);
-          }
-          setLoading(false);
-          return true;
-        }
-      }
-    } catch (err) {
-      console.error("Error loading cached categories:", err);
-    }
-    return false;
-  }, [activeCategoryTab]);
+  // Fetch categories on component mount
+  useEffect(() => {
+    // In Header.tsx - Update the fetchCategories function
+    const fetchCategories = async () => {
+      setLoading(true);
+      setError(null);
 
-  // Fetch categories with optimization
-  const fetchCategories = useCallback(async (skipCache = false) => {
-    // Don't fetch if we already have categories and not forcing refresh
-    if (!skipCache && categories.length > 0) {
-      return;
-    }
-
-    // Cancel previous request if exists
-    if (abortControllerRef.current) {
-      abortControllerRef.current.abort();
-    }
-
-    abortControllerRef.current = new AbortController();
-
-    setLoading(true);
-    setError(null);
-
-    try {
-      // Set a timeout for the fetch (15 seconds instead of 30)
-      const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error("Request timeout")), 15000);
-      });
-
-      const fetchPromise = categoryService.getAllCategories({
-        signal: abortControllerRef.current.signal
-      });
-
-      const data = await Promise.race([fetchPromise, timeoutPromise]) as any[];
-
-      if (data && data.length > 0) {
-        const tree = categoryService.buildCategoryTree(data);
-        setCategories(tree);
-        
-        // Cache the data
-        try {
-          localStorage.setItem(STORAGE_KEY, JSON.stringify({
-            data: tree,
-            timestamp: Date.now()
-          }));
-        } catch (err) {
-          console.error("Error caching categories:", err);
-        }
-
-        if (tree.length > 0 && !activeCategoryTab) {
-          setActiveCategoryTab(tree[0].name);
-        }
-      } else {
-        setCategories([]);
-      }
-    } catch (err: any) {
-      if (err.name === "AbortError") {
-        console.log("Fetch aborted");
-        return;
-      }
-      
-      console.error("Error in fetchCategories:", err);
-      setError("Failed to load categories");
-      
-      // Try to use cached data even if expired
       try {
-        const cached = localStorage.getItem(STORAGE_KEY);
-        if (cached) {
-          const { data } = JSON.parse(cached);
-          if (data && data.length > 0) {
-            setCategories(data);
-            setError(null); // Clear error since we have cached data
-            console.log("Using expired cached categories as fallback");
+        // Use getCategoryTree instead of getAllCategories + buildCategoryTree
+        const treeData = await categoryService.getCategoryTree();
+
+        console.log("Tree data loaded:", treeData);
+        console.log("Root categories count:", treeData.length);
+
+        if (treeData && treeData.length > 0) {
+          setCategories(treeData); // Tree already has subcategories
+
+          if (treeData.length > 0) {
+            setActiveCategoryTab(treeData[0].name);
+          }
+        } else {
+          // Fallback to flat list if tree fails
+          console.log("Tree returned empty, trying flat list...");
+          const flatData = await categoryService.getAllCategories();
+          const tree = categoryService.buildCategoryTree(flatData);
+          setCategories(tree);
+
+          if (tree.length > 0) {
+            setActiveCategoryTab(tree[0].name);
           }
         }
-      } catch (cacheErr) {
-        console.error("Error loading fallback cache:", cacheErr);
-      }
-    } finally {
-      setLoading(false);
-    }
-  }, [categories.length, activeCategoryTab]);
-
-  // Load categories on mount with priority
-  useEffect(() => {
-    // First try to load from cache immediately (synchronous)
-    const hasCache = loadCachedCategories();
-    
-    // Then fetch fresh data in background (don't await)
-    if (!hasCache) {
-      fetchCategories();
-    } else {
-      // Still fetch fresh data in background but don't show loading
-      fetchCategories(true).catch(console.error);
-    }
-
-    // Cleanup function
-    return () => {
-      if (abortControllerRef.current) {
-        abortControllerRef.current.abort();
+      } catch (err) {
+        console.error("Error in fetchCategories:", err);
+        setError("Failed to load categories");
+        setCategories([]);
+      } finally {
+        setLoading(false);
       }
     };
-  }, [loadCachedCategories, fetchCategories]);
 
-  // Handle scroll for sticky header with throttling
+    fetchCategories();
+  }, []);
+
+  // Handle scroll for sticky header
   useEffect(() => {
-    let ticking = false;
-    
     const handleScroll = () => {
-      if (!ticking) {
-        requestAnimationFrame(() => {
-          if (mainHeaderRef.current && topBarRef.current) {
-            const topBarHeight = topBarRef.current.clientHeight;
-            const scrollPosition = window.scrollY;
-            setIsSticky(scrollPosition > topBarHeight);
-          }
-          ticking = false;
-        });
-        ticking = true;
+      if (mainHeaderRef.current && topBarRef.current) {
+        const topBarHeight = topBarRef.current.clientHeight;
+        const scrollPosition = window.scrollY;
+
+        // Make header sticky when scrolled past the top bar
+        setIsSticky(scrollPosition > topBarHeight);
       }
     };
 
-    window.addEventListener("scroll", handleScroll, { passive: true });
+    window.addEventListener("scroll", handleScroll);
+
+    // Initial check
     handleScroll();
 
     return () => {
@@ -208,8 +124,7 @@ export default function Header() {
     };
   }, []);
 
-  // Memoized data to prevent unnecessary re-renders
-  const specialized = useMemo(() => [
+  const specialized = [
     {
       name: "Gaming PCs",
       href: "/specialized/gaming-pcs",
@@ -258,9 +173,9 @@ export default function Header() {
       icon: "🔌",
       description: "Gaming peripherals",
     },
-  ], []);
+  ];
 
-  const offers = useMemo(() => [
+  const offers = [
     {
       name: "Today's Deals",
       href: "/offers/todays-deals",
@@ -317,7 +232,7 @@ export default function Header() {
       description: "Season specials",
       discount: "Up to 70% off",
     },
-  ], []);
+  ];
 
   // Close dropdowns when clicking outside
   useEffect(() => {
@@ -335,11 +250,13 @@ export default function Header() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const closeAllDropdowns = useCallback(() => {
+  // Function to close all dropdowns
+  const closeAllDropdowns = () => {
     setActiveDropdown(null);
-  }, []);
+  };
 
-  const handleMouseEnter = useCallback((dropdown: string) => {
+  const handleMouseEnter = (dropdown: string) => {
+    console.log("Mouse entered:", dropdown);
     if (dropdownTimerRef.current) {
       clearTimeout(dropdownTimerRef.current);
     }
@@ -351,26 +268,23 @@ export default function Header() {
     ) {
       setActiveCategoryTab(categories[0].name);
     }
-  }, [categories.length, activeCategoryTab]);
+  };
 
-  const handleMouseLeave = useCallback(() => {
+  const handleMouseLeave = () => {
+    console.log("Mouse left");
     dropdownTimerRef.current = setTimeout(() => {
       setActiveDropdown(null);
     }, 150);
-  }, []);
-
-  // Preload dropdown content on hover (lazy loading)
-  const handleCategoriesHover = useCallback(() => {
-    handleMouseEnter("categories");
-    // Pre-fetch any additional data if needed
-  }, [handleMouseEnter]);
+  };
 
   return (
     <header ref={headerRef} className="relative">
+      {/* TopBar with ref */}
       <div ref={topBarRef}>
         <TopBar />
       </div>
 
+      {/* Main Header - Sticky */}
       <div
         ref={mainHeaderRef}
         className={`bg-[#191919] dark:bg-white shadow-sm transition-all duration-300 border-b border-gray-800 dark:border-gray-200 ${
@@ -385,6 +299,7 @@ export default function Header() {
       >
         <div className="max-w-7xl mx-auto">
           <div className="navbar py-3 px-0 min-h-[73px]">
+            {/* Left side - Logo and Categories dropdown */}
             <div className="navbar-start flex items-center gap-2">
               <button
                 className="btn btn-ghost lg:hidden text-white dark:text-gray-900"
@@ -407,6 +322,7 @@ export default function Header() {
                 </svg>
               </button>
 
+              {/* Dynamic Logo based on theme */}
               <Link href="/" className="p-0 pt-2 flex items-center">
                 <Image
                   src={
@@ -422,9 +338,10 @@ export default function Header() {
                 />
               </Link>
 
+              {/* Categories Dropdown Trigger - Only visible on desktop */}
               <div
                 className="hidden lg:block"
-                onMouseEnter={handleCategoriesHover}
+                onMouseEnter={() => handleMouseEnter("categories")}
                 onMouseLeave={handleMouseLeave}
               >
                 <button
@@ -467,9 +384,14 @@ export default function Header() {
               </div>
             </div>
 
-            <div className="navbar-center hidden lg:flex" />
+            {/* Center - Empty (or can be used for something else) */}
+            <div className="navbar-center hidden lg:flex">
+              {/* This space is intentionally left empty */}
+            </div>
 
+            {/* Right side - Navigation and Search */}
             <div className="navbar-end flex items-center gap-2">
+              {/* Desktop Navigation (Specialized, Offers, Contact) */}
               <div className="hidden lg:block">
                 <DesktopNav
                   activeDropdown={activeDropdown}
@@ -484,10 +406,13 @@ export default function Header() {
         </div>
       </div>
 
+      {/* Spacer to prevent content jump when header becomes sticky - Only visible when sticky */}
       {isSticky && (
         <div className="h-[73px] w-full bg-[#191919] dark:bg-white" />
       )}
 
+      {/* Dropdown Container - Fixed positioning when sticky */}
+      {/* Dropdown Container */}
       {(activeDropdown === "categories" ||
         activeDropdown === "specialized" ||
         activeDropdown === "offers") && (
@@ -539,6 +464,7 @@ export default function Header() {
         onClose={() => setIsMobileMenuOpen(false)}
       />
 
+      {/* Add custom animation styles */}
       <style jsx>{`
         @keyframes slideDown {
           from {

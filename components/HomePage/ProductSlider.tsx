@@ -136,9 +136,9 @@ const ProductSlider = () => {
   useEffect(() => {
     products.forEach((product) => {
       const timer = setTimeout(() => {
-        if (!imagesLoaded[product.id] && !imageErrors[product.id]) {
-          setLoadingTimeout((prev) => ({ ...prev, [product.id]: true }));
-          setImagesLoaded((prev) => ({ ...prev, [product.id]: true }));
+        if (!imagesLoaded[product._id] && !imageErrors[product._id]) {
+          setLoadingTimeout((prev) => ({ ...prev, [product._id]: true }));
+          setImagesLoaded((prev) => ({ ...prev, [product._id]: true }));
         }
       }, 5000);
 
@@ -366,7 +366,7 @@ const ProductSlider = () => {
               transform: `translateX(-${currentIndex * (100 / itemsToShow)}%)`,
             }}
           >
-            {products.map((product) => {
+            {products.map((product, index) => {
               const discount = calculateDiscount(product);
               const productImage = getProductImage(product);
               const isImageLoaded = imagesLoaded[product.id];
@@ -378,7 +378,7 @@ const ProductSlider = () => {
 
               return (
                 <div
-                  key={product.id}
+                  key={product._id}
                   className="flex-shrink-0 w-full"
                   style={{
                     flexBasis: `calc(${100 / itemsToShow}% - ${
@@ -388,7 +388,7 @@ const ProductSlider = () => {
                     }px)`,
                   }}
                 >
-                  <Link href={`/product/${product.id}`}>
+                  <Link href={`/product/${product._id}`}>
                     <div className="relative group overflow-hidden rounded-2xl transition-all duration-300 cursor-pointer">
                       {/* Product Image with Loading State */}
                       <div className="relative w-full aspect-square overflow-hidden rounded-2xl bg-gray-800 dark:bg-gray-200">
@@ -429,8 +429,8 @@ const ProductSlider = () => {
                               ? "opacity-100"
                               : "opacity-0"
                           }`}
-                          onLoad={() => handleImageLoad(product.id)}
-                          onError={() => handleImageError(product.id)}
+                          onLoad={() => handleImageLoad(product._id)}
+                          onError={() => handleImageError(product._id)}
                           loading="lazy"
                         />
 
@@ -470,11 +470,11 @@ const ProductSlider = () => {
                           </h3>
                           <button
                             onClick={(e) => handleAddToCart(product, e)}
-                            disabled={stock <= 0 || addingToCart === product.id}
+                            disabled={stock <= 0 || addingToCart === product._id}
                             className="p-1.5 rounded-full hover:bg-gray-800 dark:hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                             aria-label={`Add ${product.name} to cart`}
                           >
-                            {addingToCart === product.id ? (
+                            {addingToCart === product._id ? (
                               <Loader2 className="w-4 h-4 text-orange-500 animate-spin" />
                             ) : (
                               <ShoppingCartIcon className="w-4 h-4 text-white dark:text-black" />

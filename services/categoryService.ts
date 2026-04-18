@@ -1,17 +1,17 @@
 // services/categoryService.ts
-const API_BASE_URL = "https://gamersbd-server.onrender.com";
+const API_BASE_URL = "https://gamersbd-server.onrender.com/api";
 
 export interface Category {
   _id: string;
   name: string;
   description: string;
   image: string | null;
-  parent: {
-    _id: string;
-    name: string;
-  } | null;
+  parent: string | null; // Changed from object to string ID
   level: number;
-  createdAt: string;
+  order?: number;
+  slug?: string;
+  isActive?: boolean;
+  createdAt?: string;
 }
 
 export interface CategoryWithSubs extends Category {
@@ -20,13 +20,15 @@ export interface CategoryWithSubs extends Category {
 
 // Cache management
 const CACHE_KEY = "gamersbd_categories";
+const CACHE_TREE_KEY = "gamersbd_categories_tree";
 const CACHE_TIMESTAMP_KEY = "gamersbd_categories_timestamp";
 const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes cache
 
 // Helper to save to cache
-function saveToCache(categories: Category[]): void {
+function saveToCache(categories: Category[], isTree: boolean = false): void {
   try {
-    localStorage.setItem(CACHE_KEY, JSON.stringify(categories));
+    const key = isTree ? CACHE_TREE_KEY : CACHE_KEY;
+    localStorage.setItem(key, JSON.stringify(categories));
     localStorage.setItem(CACHE_TIMESTAMP_KEY, Date.now().toString());
   } catch (error) {
     console.warn("Failed to save categories to cache:", error);
@@ -34,16 +36,19 @@ function saveToCache(categories: Category[]): void {
 }
 
 // Helper to load from cache
-function loadFromCache(): Category[] | null {
+function loadFromCache(
+  isTree: boolean = false,
+): Category[] | CategoryWithSubs[] | null {
   try {
-    const cached = localStorage.getItem(CACHE_KEY);
+    const key = isTree ? CACHE_TREE_KEY : CACHE_KEY;
+    const cached = localStorage.getItem(key);
     const timestamp = localStorage.getItem(CACHE_TIMESTAMP_KEY);
 
     if (cached && timestamp) {
       const age = Date.now() - parseInt(timestamp);
       if (age < CACHE_DURATION) {
         console.log(
-          `Using cached categories (age: ${Math.round(age / 1000)}s)`,
+          `Using cached ${isTree ? "tree" : "flat"} categories (age: ${Math.round(age / 1000)}s)`,
         );
         return JSON.parse(cached);
       }
@@ -55,13 +60,10 @@ function loadFromCache(): Category[] | null {
   }
 }
 
-// Helper to delay retries
-const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
-
-// Fetch with timeout and proper abort handling
+// Fetch with timeout
 async function fetchWithTimeout(
   url: string,
-  timeout: number = 10000, // Reduced to 10 seconds
+  timeout: number = 10000,
   signal?: AbortSignal,
 ): Promise<Response> {
   const controller = new AbortController();
@@ -88,27 +90,26 @@ async function fetchWithTimeout(
 }
 
 export const categoryService = {
-  // Fetch all categories with timeout, retry, and caching
-  async getAllCategories(options?: {
+  // Fetch category tree directly from API (RECOMMENDED for dropdown)
+  async getCategoryTree(options?: {
     signal?: AbortSignal;
-  }): Promise<Category[]> {
-    // Try to load from cache first for immediate response
-    const cachedCategories = loadFromCache();
-    if (cachedCategories && cachedCategories.length > 0) {
-      // Return cached data immediately, but still try to update in background
-      this.fetchAndUpdateCacheInBackground().catch(console.error);
-      return cachedCategories;
+  }): Promise<CategoryWithSubs[]> {
+    // Try to load from cache first
+    const cachedTree = loadFromCache(true) as CategoryWithSubs[] | null;
+    if (cachedTree && cachedTree.length > 0) {
+      // Background update
+      this.fetchAndUpdateTreeInBackground().catch(console.error);
+      return cachedTree;
     }
 
-    // If no cache, try to fetch with retries
+    // Fetch from API
     for (let attempt = 1; attempt <= 2; attempt++) {
-      // Reduced retries to 2
       try {
-        console.log(`Fetching categories (attempt ${attempt}/2)...`);
+        console.log(`Fetching category tree (attempt ${attempt}/2)...`);
 
         const response = await fetchWithTimeout(
-          `${API_BASE_URL}/api/categories`,
-          10000, // 10 second timeout
+          `${API_BASE_URL}/categories/tree`, // Use tree endpoint
+          10000,
           options?.signal,
         );
 
@@ -118,66 +119,117 @@ export const categoryService = {
 
         const data = await response.json();
 
-        // Handle different API response structures
-        let categoriesData: Category[] = [];
+        let treeData: CategoryWithSubs[] = [];
 
         if (data.success && Array.isArray(data.data)) {
-          // Standard format: { success: true, data: [...] }
-          categoriesData = data.data;
+          treeData = data.data;
         } else if (Array.isArray(data)) {
-          // Direct array format
-          categoriesData = data;
-        } else if (data.data && Array.isArray(data.data)) {
-          // Nested data format
-          categoriesData = data.data;
-        } else {
-          console.warn("Unknown API response format:", Object.keys(data));
-          if (attempt === 2) {
-            return [];
-          }
-          continue;
+          treeData = data;
         }
 
-        if (categoriesData.length > 0) {
+        if (treeData.length > 0) {
           console.log(
-            `Successfully fetched ${categoriesData.length} categories`,
+            `Successfully fetched ${treeData.length} root categories with subcategories`,
           );
-          // Save to cache
-          saveToCache(categoriesData);
-          return categoriesData;
-        } else {
-          console.warn("API returned empty categories array");
-          if (attempt === 2) {
-            return [];
-          }
+          saveToCache(treeData as any, true);
+          return treeData;
         }
       } catch (error) {
-        // Don't log the full error object to avoid console pollution
         const errorMessage =
           error instanceof Error ? error.message : String(error);
-
-        if (
-          errorMessage.includes("aborted") ||
-          errorMessage.includes("timeout")
-        ) {
-          console.warn(`Attempt ${attempt} failed: Request timeout or aborted`);
-        } else if (errorMessage.includes("Failed to fetch")) {
-          console.warn(
-            `Attempt ${attempt} failed: Network error - server may be unavailable`,
-          );
-        } else {
-          console.warn(`Attempt ${attempt} failed: ${errorMessage}`);
-        }
+        console.warn(`Attempt ${attempt} failed: ${errorMessage}`);
 
         if (attempt === 2) {
           console.warn("All fetch attempts failed. Returning empty array.");
           return [];
         }
 
-        // Exponential backoff: 1s, 2s
-        const backoffDelay = 1000 * Math.pow(2, attempt - 1);
-        console.log(`Retrying in ${backoffDelay}ms...`);
-        await delay(backoffDelay);
+        await new Promise((resolve) => setTimeout(resolve, 1000 * attempt));
+      }
+    }
+
+    return [];
+  },
+
+  // Background update for tree
+  async fetchAndUpdateTreeInBackground(): Promise<void> {
+    try {
+      console.log("Background fetching category tree...");
+      const response = await fetchWithTimeout(
+        `${API_BASE_URL}/categories/tree`,
+        10000,
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        let treeData: CategoryWithSubs[] = [];
+
+        if (data.success && Array.isArray(data.data)) {
+          treeData = data.data;
+        }
+
+        if (treeData.length > 0) {
+          saveToCache(treeData as any, true);
+          console.log("Background tree update successful");
+        }
+      }
+    } catch (error) {
+      console.warn("Background tree update failed");
+    }
+  },
+
+  // Fetch all categories (flat list)
+  async getAllCategories(options?: {
+    signal?: AbortSignal;
+  }): Promise<Category[]> {
+    // Try to load from cache first
+    const cachedCategories = loadFromCache(false) as Category[] | null;
+    if (cachedCategories && cachedCategories.length > 0) {
+      this.fetchAndUpdateCacheInBackground().catch(console.error);
+      return cachedCategories;
+    }
+
+    for (let attempt = 1; attempt <= 2; attempt++) {
+      try {
+        console.log(`Fetching categories (attempt ${attempt}/2)...`);
+
+        const response = await fetchWithTimeout(
+          `${API_BASE_URL}/categories`,
+          10000,
+          options?.signal,
+        );
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+
+        let categoriesData: Category[] = [];
+
+        if (data.success && Array.isArray(data.data)) {
+          categoriesData = data.data;
+        } else if (Array.isArray(data)) {
+          categoriesData = data;
+        }
+
+        if (categoriesData.length > 0) {
+          console.log(
+            `Successfully fetched ${categoriesData.length} categories`,
+          );
+          saveToCache(categoriesData, false);
+          return categoriesData;
+        }
+      } catch (error) {
+        const errorMessage =
+          error instanceof Error ? error.message : String(error);
+        console.warn(`Attempt ${attempt} failed: ${errorMessage}`);
+
+        if (attempt === 2) {
+          return [];
+        }
+
+        await new Promise((resolve) => setTimeout(resolve, 1000 * attempt));
       }
     }
 
@@ -189,40 +241,34 @@ export const categoryService = {
     try {
       console.log("Background fetching categories...");
       const response = await fetchWithTimeout(
-        `${API_BASE_URL}/api/categories`,
-        10000, // 10 second timeout
+        `${API_BASE_URL}/categories`,
+        10000,
       );
 
       if (response.ok) {
         const data = await response.json();
-
         let categoriesData: Category[] = [];
+
         if (data.success && Array.isArray(data.data)) {
-          categoriesData = data.data;
-        } else if (Array.isArray(data)) {
-          categoriesData = data;
-        } else if (data.data && Array.isArray(data.data)) {
           categoriesData = data.data;
         }
 
         if (categoriesData.length > 0) {
-          saveToCache(categoriesData);
+          saveToCache(categoriesData, false);
           console.log("Background update successful");
         }
       }
     } catch (error) {
-      // Silently fail in background
       console.warn("Background update failed");
     }
   },
 
-  // Build category tree based on parent field
+  // Build category tree from flat data (fallback)
   buildCategoryTree(categories: Category[]): CategoryWithSubs[] {
     if (!categories || categories.length === 0) {
       return [];
     }
 
-    // Create a map for quick lookup
     const categoryMap = new Map<string, CategoryWithSubs>();
 
     // First, create all categories in the map
@@ -240,23 +286,21 @@ export const categoryService = {
       const node = categoryMap.get(cat._id);
       if (!node) return;
 
-      if (cat.parent && cat.parent._id) {
-        const parent = categoryMap.get(cat.parent._id);
+      if (cat.parent) {
+        const parent = categoryMap.get(cat.parent);
         if (parent) {
           parent.subcategories.push(node);
         } else {
-          // Parent not found, treat as root
           roots.push(node);
         }
       } else {
-        // No parent, this is a root category
         roots.push(node);
       }
     });
 
-    // Sort all levels alphabetically
+    // Sort all levels
     const sortCategories = (items: CategoryWithSubs[]) => {
-      items.sort((a, b) => a.name.localeCompare(b.name));
+      items.sort((a, b) => (a.order || 0) - (b.order || 0));
       items.forEach((item) => {
         if (item.subcategories.length > 0) {
           sortCategories(item.subcategories);
@@ -269,38 +313,11 @@ export const categoryService = {
     return roots;
   },
 
-  // Get root categories (parent = null)
-  getRootCategories(categories: Category[]): Category[] {
-    return categories.filter((cat) => cat.parent === null);
-  },
-
-  // Get subcategories for a specific parent ID
-  getSubcategoriesByParentId(
-    categories: Category[],
-    parentId: string,
-  ): Category[] {
-    return categories.filter(
-      (cat) => cat.parent && cat.parent._id === parentId,
-    );
-  },
-
-  // Get category by ID
-  getCategoryById(categories: Category[], id: string): Category | undefined {
-    return categories.find((cat) => cat._id === id);
-  },
-
-  // Get category by name
-  getCategoryByName(
-    categories: Category[],
-    name: string,
-  ): Category | undefined {
-    return categories.find((cat) => cat.name === name);
-  },
-
-  // Clear cache manually if needed
+  // Clear cache
   clearCache(): void {
     try {
       localStorage.removeItem(CACHE_KEY);
+      localStorage.removeItem(CACHE_TREE_KEY);
       localStorage.removeItem(CACHE_TIMESTAMP_KEY);
       console.log("Categories cache cleared");
     } catch (error) {

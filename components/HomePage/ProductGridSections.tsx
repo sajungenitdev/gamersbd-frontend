@@ -62,8 +62,7 @@ const ProductGridSections = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const API_URL =
-    process.env.NEXT_PUBLIC_API_URL || "https://gamersbd-server.onrender.com";
+  const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://gamersbd-server.onrender.com";
 
   // Fetch products from API
   useEffect(() => {
@@ -207,7 +206,7 @@ const ProductGridSections = () => {
             const isLastSection = index === sections.length - 1;
 
             return (
-              <div key={section.id} className="space-y-4">
+              <div key={index} className="space-y-4">
                 {/* Section Header */}
                 <div className="flex items-center gap-2 pb-2 border-b border-gray-700 dark:border-gray-300">
                   <div className="w-8 h-8 bg-gray-800 dark:bg-gray-200 rounded-lg flex items-center justify-center text-white dark:text-black">
@@ -241,7 +240,10 @@ const ProductGridSections = () => {
                           : 0;
 
                       return (
-                        <Link href={`/product/${product.id}`} key={product.id}>
+                        <Link
+                          href={`/product/${product._id}`}
+                          key={product._id}
+                        >
                           <div className="flex items-center gap-4 p-3 rounded-lg hover:bg-gray-800 dark:hover:bg-gray-100 transition-all cursor-pointer group">
                             {/* Product Image */}
                             <div className="relative w-24 h-28 rounded-lg overflow-hidden bg-gray-800 dark:bg-gray-200 flex-shrink-0">
@@ -280,7 +282,11 @@ const ProductGridSections = () => {
                                     ? "৳"
                                     : product.currency === "USD"
                                       ? "$"
-                                      : product.currency || "$"}
+                                      : product.currency === "EUR"
+                                        ? "€"
+                                        : product.currency === "GBP"
+                                          ? "£"
+                                          : product.currency || "$"}
                                   {finalPrice.toFixed(2)}
                                 </span>
                                 {discount > 0 && (

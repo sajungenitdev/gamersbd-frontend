@@ -86,9 +86,7 @@ const EditorsPicks = () => {
     const fetchProducts = async () => {
       try {
         setLoading(true);
-        const response = await fetch(
-          "https://gamersbd-server.onrender.com/api/products",
-        );
+        const response = await fetch("https://gamersbd-server.onrender.com/api/products");
         if (!response.ok) {
           throw new Error(`Failed to fetch: ${response.status}`);
         }
@@ -350,7 +348,7 @@ const EditorsPicks = () => {
                 >
                   {filteredProducts.map((product) => (
                     <div
-                      key={product.id}
+                      key={product._id}
                       className="flex-shrink-0 w-full"
                       style={{
                         flexBasis: `calc(${100 / itemsToShow}% - ${
@@ -468,7 +466,11 @@ const EditorsPicks = () => {
 
                             <div className="flex items-center gap-2 mb-4">
                               <span className="text-xl font-bold text-white dark:text-black">
-                                {product.currency || "$"}
+                                {product.currency === "BDT"
+                                  ? "৳"
+                                  : product.currency === "USD"
+                                    ? "$"
+                                    : product.currency || "$"}
                                 {(product.finalPrice || product.price).toFixed(
                                   2,
                                 )}

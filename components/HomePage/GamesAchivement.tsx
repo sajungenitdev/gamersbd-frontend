@@ -465,7 +465,7 @@ const GamesAchivement = () => {
 
                 return (
                   <div
-                    key={product.id}
+                    key={product._id}
                     className="flex-shrink-0 w-full"
                     style={{
                       flexBasis: `calc(${100 / itemsToShow}% - ${

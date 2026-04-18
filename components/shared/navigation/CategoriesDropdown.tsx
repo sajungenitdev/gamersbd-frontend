@@ -2,7 +2,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 
 interface Category {
   _id: string;
@@ -34,26 +34,63 @@ const CategoriesDropdown = ({
   const dropdownRef = useRef<HTMLDivElement>(null);
   const [dropdownHeight, setDropdownHeight] = useState<number | null>(null);
   const [randomCategories, setRandomCategories] = useState<Category[]>([]);
+  const [previousSelections, setPreviousSelections] = useState<string[]>([]);
 
-  useEffect(() => {
-    console.log(
-      "CategoriesDropdown rendered with categories:",
-      categories.length,
-    );
-  }, [categories]);
+  // Fisher-Yates shuffle algorithm (more efficient and truly random)
+  const shuffleArray = useCallback((array: Category[]) => {
+    const shuffled = [...array];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    return shuffled;
+  }, []);
 
-  // Select 8 random categories when component mounts or categories change
+  // Get unique random categories with optional exclusion
+  const getUniqueRandomCategories = useCallback((
+    allCategories: Category[], 
+    count: number = 8,
+    excludeIds: string[] = []
+  ): Category[] => {
+    // Filter out excluded categories if needed
+    let availableCategories = allCategories;
+    if (excludeIds.length > 0) {
+      availableCategories = allCategories.filter(cat => !excludeIds.includes(cat._id));
+    }
+    
+    // If not enough categories, use all available
+    if (availableCategories.length <= count) {
+      return shuffleArray(availableCategories);
+    }
+    
+    // Shuffle and take first 'count' items
+    const shuffled = shuffleArray(availableCategories);
+    return shuffled.slice(0, count);
+  }, [shuffleArray]);
+
+  // Select random unique categories
+  const refreshRandomCategories = useCallback(() => {
+    if (categories.length > 0) {
+      // Get 8 unique random categories
+      const newRandomCats = getUniqueRandomCategories(categories, 8);
+      
+      // Store their IDs to track selections (optional, for preventing repeats across refreshes)
+      const newSelections = newRandomCats.map(cat => cat._id);
+      setPreviousSelections(newSelections);
+      setRandomCategories(newRandomCats);
+      
+      // Log for debugging
+      console.log(`🎲 Refreshed with ${newRandomCats.length} unique categories:`, 
+        newRandomCats.map(c => c.name).join(', '));
+    }
+  }, [categories, getUniqueRandomCategories]);
+
+  // Initialize random categories on mount and when categories change
   useEffect(() => {
     if (categories.length > 0) {
-      // Shuffle array and get first 8
-      const shuffled = [...categories];
-      for (let i = shuffled.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-      }
-      setRandomCategories(shuffled.slice(0, 8));
+      refreshRandomCategories();
     }
-  }, [categories]);
+  }, [categories, refreshRandomCategories]);
 
   // Adjust dropdown position based on sticky header
   useEffect(() => {
@@ -77,18 +114,6 @@ const CategoriesDropdown = ({
     }
     if (onCloseDropdown) {
       onCloseDropdown();
-    }
-  };
-
-  // Refresh random categories
-  const refreshRandomCategories = () => {
-    if (categories.length > 0) {
-      const shuffled = [...categories];
-      for (let i = shuffled.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-      }
-      setRandomCategories(shuffled.slice(0, 8));
     }
   };
 
@@ -147,16 +172,16 @@ const CategoriesDropdown = ({
       onMouseLeave={onMouseLeave}
     >
       <div className="flex gap-8">
-        {/* Left Sidebar - Random 8 Root Categories */}
+        {/* Left Sidebar - Random Unique Categories */}
         <div className="w-1/4 border-r border-[#3a3a3a] dark:border-gray-300 pr-6">
           <div className="flex items-center justify-between mb-4 px-3">
             <h3 className="font-bold font-lato text-sm tracking-wider text-gray-400 dark:text-gray-500 uppercase">
-              Categories
+              Categories ({randomCategories.length} of {categories.length})
             </h3>
             <button
               onClick={refreshRandomCategories}
               className="p-1 text-gray-400 dark:text-gray-500 hover:text-orange-500 dark:hover:text-orange-600 transition-colors"
-              title="Refresh categories"
+              title="Refresh to see different categories"
             >
               <svg
                 className="w-4 h-4"
@@ -173,13 +198,14 @@ const CategoriesDropdown = ({
               </svg>
             </button>
           </div>
+          
+          {/* Display random unique categories */}
           <div className="space-y-1">
-            {randomCategories.map((category) => (
+            {randomCategories.map((category, index) => (
               <button
                 key={category._id}
                 onClick={() => {
                   onCategoryChange(category.name);
-                  // Don't close dropdown when just changing category view
                 }}
                 onMouseEnter={() => onCategoryChange(category.name)}
                 className={`w-full text-left px-3 py-2.5 rounded-lg transition-all duration-200 group ${
@@ -212,12 +238,18 @@ const CategoriesDropdown = ({
             ))}
           </div>
 
-          {/* Show total categories count */}
-          {/* <div className="mt-4 px-3">
+          {/* Show count information */}
+          <div className="mt-4 px-3">
             <p className="text-xs text-gray-500 dark:text-gray-400">
-              Showing {randomCategories.length} of {categories.length} categories
+              Showing {randomCategories.length} random categories
+              {categories.length > 8 && ` out of ${categories.length} total`}
             </p>
-          </div> */}
+            {categories.length > 8 && (
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                🔄 Click refresh to see different categories
+              </p>
+            )}
+          </div>
 
           <Link
             href="/all-categories"
@@ -241,7 +273,7 @@ const CategoriesDropdown = ({
           </Link>
         </div>
 
-        {/* Right Side - Subcategories with CLEAN URLs */}
+        {/* Right Side - Subcategories */}
         <div className="w-3/4">
           <div className="flex justify-between items-center mb-4">
             <h3 className="font-bold font-lato text-lg text-white dark:text-[#2a2a2a]">
