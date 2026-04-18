@@ -33,7 +33,9 @@ const PromotionalSectionTwo = () => {
               Get an Among Us-themed Fortnite Back Bling and Emote
             </p>
             <Link
-              href="/shop" className="text-purple-600 dark:text-purple-400 font-medium flex items-center gap-1 hover:gap-2 transition-all">
+              href="/shop"
+              className="text-purple-600 dark:text-purple-400 font-medium flex items-center gap-1 hover:gap-2 transition-all"
+            >
               Learn More <ArrowRightIcon className="w-4 h-4" />
             </Link>
           </div>
@@ -61,9 +63,12 @@ const PromotionalSectionTwo = () => {
             <p className="text-white dark:text-black mb-4">
               Receive a Rogue (Phantom), weapon wrap, and 20,000 XP for free!
             </p>
-            <button className="text-blue-600 dark:text-blue-400 font-medium flex items-center gap-1 hover:gap-2 transition-all">
+            <Link
+              href="/shop"
+              className="text-purple-600 dark:text-purple-400 font-medium flex items-center gap-1 hover:gap-2 transition-all"
+            >
               Learn More <ArrowRightIcon className="w-4 h-4" />
-            </button>
+            </Link>
           </div>
 
           {/* Fortnite */}
@@ -90,7 +95,9 @@ const PromotionalSectionTwo = () => {
               Get an Among Us-themed Fortnite Back Bling and Emote
             </p>
             <Link
-              href="/shop" className="text-purple-600 dark:text-purple-400 font-medium flex items-center gap-1 hover:gap-2 transition-all">
+              href="/shop"
+              className="text-purple-600 dark:text-purple-400 font-medium flex items-center gap-1 hover:gap-2 transition-all"
+            >
               Learn More <ArrowRightIcon className="w-4 h-4" />
             </Link>
           </div>
