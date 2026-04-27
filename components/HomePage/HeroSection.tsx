@@ -30,11 +30,9 @@ const SkeletonLoader = () => (
   <div className="bg-[#191919] dark:bg-white min-h-[600px]">
     <div className="max-w-7xl mx-auto py-8">
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
-        {/* Left side skeleton */}
         <div className="lg:col-span-4">
           <div className="bg-gray-800 dark:bg-gray-200 rounded-2xl h-[568px] animate-pulse"></div>
         </div>
-        {/* Right side skeletons */}
         <div className="lg:col-span-1 space-y-4">
           {[1, 2, 3, 4].map((i) => (
             <div key={i} className="bg-gray-800 dark:bg-gray-200 rounded-xl h-[130px] animate-pulse"></div>
@@ -66,6 +64,12 @@ const HeroSection = () => {
   const goToNextSlide = useCallback(() => {
     setCurrentSlide((prev) => (prev + 1) % sliderImages.length);
   }, [sliderImages.length]);
+
+  // ADD THIS MISSING FUNCTION - goToSlide
+  const goToSlide = useCallback((index: number) => {
+    if (index === currentSlide) return;
+    setCurrentSlide(index);
+  }, [currentSlide]);
 
   const clearAllIntervals = useCallback(() => {
     if (intervalRef.current) clearInterval(intervalRef.current);
@@ -108,7 +112,6 @@ const HeroSection = () => {
       try {
         setLoading(true);
         
-        // Check localStorage cache first (5 minute cache)
         const cachedData = localStorage.getItem('heroData');
         const cacheTime = localStorage.getItem('heroDataTimestamp');
         const isCacheValid = cacheTime && (Date.now() - parseInt(cacheTime)) < 5 * 60 * 1000;
@@ -119,7 +122,6 @@ const HeroSection = () => {
             updateStateFromData(data);
             setLoading(false);
           }
-          // Still fetch in background for update
           fetchFreshData(abortController.signal);
         } else {
           await fetchFreshData(abortController.signal);
@@ -134,7 +136,7 @@ const HeroSection = () => {
 
     const updateStateFromData = (data: any) => {
       if (data.hero?.slider?.slides?.length > 0) {
-        setSliderImages(data.hero.slider.slides.slice(0, 8)); // Limit to 8 slides max
+        setSliderImages(data.hero.slider.slides.slice(0, 8));
         setSettings({
           autoplay: data.hero.slider.settings?.autoplay ?? true,
           autoplaySpeed: data.hero.slider.settings?.autoplaySpeed ?? 5000,
@@ -144,7 +146,7 @@ const HeroSection = () => {
       }
       
       if (data.hero?.offers?.length > 0) {
-        setOffers(data.hero.offers.slice(0, 8)); // Limit to 8 offers max
+        setOffers(data.hero.offers.slice(0, 8));
       }
     };
 
@@ -158,7 +160,6 @@ const HeroSection = () => {
         
         if (result.success && result.data && isMounted.current) {
           updateStateFromData(result.data);
-          // Cache the data
           localStorage.setItem('heroData', JSON.stringify(result.data));
           localStorage.setItem('heroDataTimestamp', Date.now().toString());
         }
@@ -265,7 +266,6 @@ const HeroSection = () => {
                   }`}
                   style={{ transform: `translateX(${(index - currentSlide) * 100}%)` }}
                 >
-                  {/* Lazy loaded image */}
                   {index === currentSlide || Math.abs(index - currentSlide) === 1 ? (
                     <img
                       src={image.url}
