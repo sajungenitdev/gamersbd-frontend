@@ -8,7 +8,10 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@ai-sdk/google": "^3.0.64",
+    "@google/generative-ai": "^0.24.1",
     "@headlessui/react": "^2.2.9",
+    "ai": "^6.0.168",
     "axios": "^1.14.0",
     "daisyui": "^4.12.0",
     "lucide-react": "^0.473.0",

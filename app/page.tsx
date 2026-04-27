@@ -1,3 +1,4 @@
+import { AIChatBot } from "../components/Extension/AIChatBot";
 import CatalougeSection from "../components/HomePage/CatalougeSection";
 import EditorsPicks from "../components/HomePage/EditorsPicks";
 import GamesAchivement from "../components/HomePage/GamesAchivement";
@@ -20,6 +21,19 @@ export default function Home() {
       <PromotionalSectionTwo />
       <RecentUploads />
       <CatalougeSection />
+      <AIChatBot
+        apiKey="AIzaSyD7ufhFGhs1XbzQWS3shGK2YBWsBQ1wLoA"
+        position="bottom-right"
+        welcomeMessage="Hello! I'm your gaming assistant. Ask me anything about our products, deals, or gaming recommendations!"
+        suggestions={[
+          "What are the best gaming mice?",
+          "Show me mechanical keyboards",
+          "Any ongoing discounts?",
+          "Compare gaming monitors",
+          "What's your return policy?",
+          "Recommend a budget gaming headset",
+        ]}
+      />
     </>
   );
 }

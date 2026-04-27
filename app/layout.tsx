@@ -11,6 +11,8 @@ import { WishlistProvider } from "./contexts/WishlistContext";
 import { OrderProvider } from "./contexts/OrderContext";
 import { CurrencyProvider } from "./contact/CurrencyContext";
 import PromotionModalManager from "../components/PromotionModal/PromotionModalManager";
+import { BackToTopButton } from "../components/Extension/BackToTopButton";
+import { ProductNotificationToast } from "../components/Extension/ProductNotificationToast";
 // One line to import and export metadata
 export { metadata, viewport } from "../components/metaData/metadata";
 
@@ -48,7 +50,9 @@ export default function RootLayout({
                   <CurrencyProvider>
                     <Header />
                     {children}
+                    <BackToTopButton />
                     <Footer />
+                     <ProductNotificationToast />
                     <PromotionModalManager />
                     <Toaster
                       position="bottom-right"
