@@ -8,7 +8,7 @@ import {
 } from "../types/homeSettings.types";
 
 const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api/home-settings";
+  process.env.NEXT_PUBLIC_API_URL || "https://gamersbd-server.onrender.com/api/home-settings";
 
 export const homeSettingsService = {
   // Get settings

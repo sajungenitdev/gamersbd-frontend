@@ -153,7 +153,7 @@ const HeroSection = () => {
     const fetchFreshData = async (signal: AbortSignal) => {
       try {
         const response = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/home-settings`,
+          `${process.env.NEXT_PUBLIC_API_URL || 'https://gamersbd-server.onrender.com'}/api/home-settings`,
           { signal }
         );
         const result = await response.json();
