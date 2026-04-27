@@ -32,7 +32,7 @@ export function ProductNotificationToast({
   const [isHovering, setIsHovering] = useState(false);
   const [isExiting, setIsExiting] = useState(false);
 
-  const animationRef = useRef<number>();
+ const animationRef = useRef<number | undefined>(undefined);
   const startTimeRef = useRef<number>(0);
   const currentIndexRef = useRef<number>(0);
   const isRunningRef = useRef<boolean>(false);
