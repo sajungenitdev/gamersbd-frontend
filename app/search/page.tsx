@@ -1,3 +1,4 @@
+"use client";
 import React from 'react';
 import SearchComps from '../../components/shared/Search/SearchComps';
 
