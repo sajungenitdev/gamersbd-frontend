@@ -17,6 +17,8 @@ import {
   TrendingUp,
   Clock,
   Star,
+  Calendar,
+  Baby,
 } from "lucide-react";
 import Link from "next/link";
 import { toast, Toaster } from "react-hot-toast";
@@ -60,7 +62,7 @@ interface Product {
   };
 }
 
-// Modern Accordion Component with single open behavior
+// Modern Accordion Component with single open behavior and clickable chevron
 const ModernAccordion = ({
   title,
   children,
@@ -78,11 +80,11 @@ const ModernAccordion = ({
 }) => {
   return (
     <div className="border-b border-gray-800/50 last:border-0">
-      <button
-        onClick={onToggle}
-        className="w-full flex items-center justify-between py-3 text-white hover:text-purple-400 transition-all duration-200 group"
-      >
-        <div className="flex items-center gap-3">
+      <div className="w-full flex items-center justify-between py-3 text-white hover:text-purple-400 transition-all duration-200 group">
+        <button
+          onClick={onToggle}
+          className="flex items-center gap-3 flex-1"
+        >
           <span className="text-purple-400">{icon}</span>
           <span className="font-semibold text-sm uppercase tracking-wide">
             {title}
@@ -92,18 +94,23 @@ const ModernAccordion = ({
               {count}
             </span>
           )}
-        </div>
-        <div
-          className={`transform transition-all duration-300 ${
-            isOpen ? "rotate-180" : ""
-          }`}
+        </button>
+        <button
+          onClick={onToggle}
+          className="p-1.5 hover:bg-purple-600/20 rounded-md transition-colors"
         >
-          <ChevronDown className="w-4 h-4 text-gray-500 group-hover:text-purple-400" />
-        </div>
-      </button>
+          <div
+            className={`transform transition-all duration-300 ${
+              isOpen ? "rotate-180" : ""
+            }`}
+          >
+            <ChevronDown className="w-4 h-4 text-gray-500 group-hover:text-purple-400" />
+          </div>
+        </button>
+      </div>
       <div
         className={`overflow-hidden transition-all duration-300 ease-in-out ${
-          isOpen ? " opacity-100 pb-4" : "max-h-0 opacity-0"
+          isOpen ? "max-h-[800px] opacity-100 pb-4" : "max-h-0 opacity-0"
         }`}
       >
         {children}
@@ -217,7 +224,36 @@ const QuickPriceChips = ({
   );
 };
 
-// Age Range Slider
+// Quick Age Chips
+const QuickAgeChips = ({
+  onSelect,
+}: {
+  onSelect: (min: number, max: number) => void;
+}) => {
+  const chips = [
+    { label: "0-3 years", min: 0, max: 3 },
+    { label: "4-7 years", min: 4, max: 7 },
+    { label: "8-12 years", min: 8, max: 12 },
+    { label: "13-17 years", min: 13, max: 17 },
+    { label: "18+ years", min: 18, max: 100 },
+  ];
+
+  return (
+    <div className="flex flex-wrap gap-2 mt-3">
+      {chips.map((chip) => (
+        <button
+          key={chip.label}
+          onClick={() => onSelect(chip.min, chip.max)}
+          className="px-3 py-1.5 text-xs rounded-full bg-gray-800/50 text-gray-400 hover:bg-orange-600/20 hover:text-orange-400 transition-all duration-200 border border-gray-700 hover:border-orange-500/50"
+        >
+          {chip.label}
+        </button>
+      ))}
+    </div>
+  );
+};
+
+// Age Range Slider Component
 const AgeRangeSlider = ({
   minAge,
   maxAge,
@@ -281,19 +317,19 @@ const AgeRangeSlider = ({
       <div className="flex justify-between items-center gap-3">
         <div className="flex-1 bg-gray-800/50 rounded-lg px-3 py-2 border border-gray-700">
           <span className="text-xs text-gray-500">Min Age</span>
-          <p className="text-white font-semibold">{localMin} yrs</p>
+          <p className="text-white font-semibold">{localMin} years</p>
         </div>
         <span className="text-gray-600">—</span>
         <div className="flex-1 bg-gray-800/50 rounded-lg px-3 py-2 border border-gray-700">
           <span className="text-xs text-gray-500">Max Age</span>
-          <p className="text-white font-semibold">{localMax} yrs</p>
+          <p className="text-white font-semibold">{localMax} years</p>
         </div>
       </div>
     </div>
   );
 };
 
-// Modern Category Tree Component
+// Modern Category Tree Component with plus/minus icons
 const CategoryTree = ({
   categories,
   selectedCategory,
@@ -334,7 +370,8 @@ const CategoryTree = ({
     }
   }, [selectedCategory, categories]);
 
-  const toggleCategory = (categoryId: string) => {
+  const toggleCategory = (categoryId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
     setExpandedCategories((prev) =>
       prev.includes(categoryId)
         ? prev.filter((id) => id !== categoryId)
@@ -361,7 +398,7 @@ const CategoryTree = ({
         >
           {hasSubcategories && (
             <button
-              onClick={() => toggleCategory(category._id)}
+              onClick={(e) => toggleCategory(category._id, e)}
               className="p-1.5 hover:bg-purple-600/20 rounded-md transition-colors flex-shrink-0"
             >
               {isExpanded ? (
@@ -441,7 +478,7 @@ const CategoryTree = ({
   );
 };
 
-// Product Card Component
+// Product Card Component (keep as is - too long, but functional)
 const ProductCard = React.memo(
   ({
     product,
@@ -450,6 +487,7 @@ const ProductCard = React.memo(
     product: Product;
     onQuickView: (product: Product) => void;
   }) => {
+    // ... (keep existing ProductCard implementation)
     const router = useRouter();
     const { addToCart } = useCart();
     const [isBuyingNow, setIsBuyingNow] = useState(false);
@@ -769,6 +807,16 @@ const AllProducts = () => {
     setMounted(true);
   }, []);
 
+  // Handle accordion toggle - only one open at a time
+  const handleAccordionToggle = (accordionId: string) => {
+    setOpenAccordion((prev) => (prev === accordionId ? "" : accordionId));
+  };
+
+  // Handle age range selection from chips
+  const handleAgeSelect = (min: number, max: number) => {
+    setAgeRange({ min, max });
+  };
+
   const filteredProducts = useMemo(() => {
     let filtered = [...products];
 
@@ -954,7 +1002,7 @@ const AllProducts = () => {
                 <ModernAccordion
                   title="Categories"
                   isOpen={openAccordion === "categories"}
-                  onToggle={() => setOpenAccordion("categories")}
+                  onToggle={() => handleAccordionToggle("categories")}
                   count={getProductCountByCategory(selectedCategory)}
                   icon={<Tag className="w-4 h-4" />}
                 >
@@ -970,7 +1018,7 @@ const AllProducts = () => {
                 <ModernAccordion
                   title="Price Range"
                   isOpen={openAccordion === "price"}
-                  onToggle={() => setOpenAccordion("price")}
+                  onToggle={() => handleAccordionToggle("price")}
                   icon={<DollarSign className="w-4 h-4" />}
                 >
                   <div className="space-y-4">
@@ -983,25 +1031,28 @@ const AllProducts = () => {
                   </div>
                 </ModernAccordion>
 
-                {/* Age Range Accordion */}
+                {/* Age Range Accordion - NEW */}
                 <ModernAccordion
                   title="Age Range"
                   isOpen={openAccordion === "age"}
-                  onToggle={() => setOpenAccordion("age")}
-                  icon={<Users className="w-4 h-4" />}
+                  onToggle={() => handleAccordionToggle("age")}
+                  icon={<Baby className="w-4 h-4" />}
                 >
-                  <AgeRangeSlider
-                    minAge={ageRange.min}
-                    maxAge={ageRange.max}
-                    onAgeChange={(min, max) => setAgeRange({ min, max })}
-                  />
+                  <div className="space-y-4">
+                    <AgeRangeSlider
+                      minAge={ageRange.min}
+                      maxAge={ageRange.max}
+                      onAgeChange={(min, max) => setAgeRange({ min, max })}
+                    />
+                    <QuickAgeChips onSelect={handleAgeSelect} />
+                  </div>
                 </ModernAccordion>
 
                 {/* Availability Accordion */}
                 <ModernAccordion
                   title="Availability"
                   isOpen={openAccordion === "availability"}
-                  onToggle={() => setOpenAccordion("availability")}
+                  onToggle={() => handleAccordionToggle("availability")}
                   icon={<Package className="w-4 h-4" />}
                 >
                   <label className="flex items-center gap-3 cursor-pointer group p-2 rounded-lg hover:bg-gray-700/50 transition-colors">
