@@ -156,7 +156,7 @@ const SearchComps = () => {
       
       setLoading(true);
       try {
-        const url = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/search?q=${encodeURIComponent(query.trim())}&limit=50`;
+        const url = `${process.env.NEXT_PUBLIC_API_URL || 'https://gamersbd-server.onrender.com'}/api/search?q=${encodeURIComponent(query.trim())}&limit=50`;
         const response = await fetch(url);
         const result = await response.json();
         
